@@ -13,6 +13,7 @@ using P = DocumentFormat.OpenXml.Presentation;
 using A = DocumentFormat.OpenXml.Drawing;
 using System.Drawing;
 using System.Net;
+using System.Text;
 
 namespace PostToPoint
 {
@@ -25,9 +26,19 @@ namespace PostToPoint
             string appSecret = "";
             string username = "";
             string password = "";
+
+
             string accessToken = string.Empty;
             string userAgent = "PostToPoint";
             string redirectUri = "http://localhost:8080";
+
+            string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+
+            DateTime oldestPostAccepted = DateTime.Now.AddDays(-7);
+            string timeQuery = "week"; // one of hour, day, week, month, year, all
+            string sortQuery = "new"; // one of hot, new, top, rising, controversial
+
+            bool downloadImages = true;
 
             var authenticator = new RedditAuthenticator(appId, appSecret, username, password, userAgent, redirectUri);
 
@@ -45,19 +56,23 @@ namespace PostToPoint
             var reddit = new RedditClient(appId: appId, appSecret: appSecret, accessToken: accessToken);
 
             // Get saved posts (change to GetUpvoted for liked posts)
-            // var savedPosts = reddit.Account.Me.GetSaved(limit: 100);
-            var redditImportantPosts = reddit.Account.Me.GetPostHistory(where: "saved", context: 3, t: "all", limit: 100, sort: "new");
-            redditImportantPosts.AddRange(reddit.Account.Me.GetPostHistory(where: "upvoted", context: 3, t: "all", limit: 100, sort: "new"));
+            var savedPosts = reddit.Account.Me.GetPostHistory(where: "saved", context: 3, t: timeQuery, limit: 100, sort: sortQuery);
+            var upvotedPosts = reddit.Account.Me.GetPostHistory(where: "upvoted", context: 3, t: timeQuery, limit: 100, sort: sortQuery);
 
-            // TODO : use URL instead of PermaLink (availabvle in "LinkPost" cast)
-            redditImportantPosts = new List<Post>(redditImportantPosts.DistinctBy(x => x.Permalink));
+            List<Post> posts = new List<Post>(savedPosts);
+            posts.AddRange(upvotedPosts);
+
+            var redditImportantPosts = new List<Post>(
+                posts.Where(x => x.Created > oldestPostAccepted)
+                     .DistinctBy(x => x.Permalink)
+                     .DistinctBy(x => GetPostImportantPart(x))
+                     );
 
             var postDataList = new List<PostData>();
             foreach (var post in redditImportantPosts)
             {
                 var postData = new PostData()
                 {
-                    // SelfText = post.SelfText,
                     Subreddit = post.Subreddit,
                     Created = post.Created,
                     Post = post,
@@ -78,12 +93,29 @@ namespace PostToPoint
                 postDataList.Add(postData);
             }
 
+            // Directory to save presentation
+            string outputDir = "Outputs";
+            Directory.CreateDirectory(outputDir);
+
+            if (downloadImages)
+            {
+                outputDir = await DownloadAndSaveImages(batchTag, postDataList, outputDir);
+            }
+
+            // Create PowerPoint presentation
+            CreatePresentation(postDataList, Path.Combine("Outputs", batchTag  + "-PostToPoint.pptx"));
+
+            Console.WriteLine("Presentation created successfully.");
+        }
+
+        private static async Task<string> DownloadAndSaveImages(string batchTag, List<PostData> postDataList, string outputDir)
+        {
+            // Directory to save screenshots
+            outputDir = Path.Combine(outputDir, batchTag);
+            Directory.CreateDirectory(outputDir);
+
             // Set up PuppeteerSharp
             await new BrowserFetcher().DownloadAsync();
-
-            // Directory to save screenshots
-            string screenshotsDir = "Screenshots";
-            Directory.CreateDirectory(screenshotsDir);
 
             // For each post, capture screenshot if it's a URL
             foreach (var postData in postDataList)
@@ -92,11 +124,11 @@ namespace PostToPoint
                 {
                     if (postData.Url.Contains("i.redd.it"))
                     {
-                        await DownloadFileAsync(postData.Url, screenshotsDir, postData);
+                        await DownloadFileAsync(postData.Url, outputDir, postData);
                     }
                     else
                     {
-                        string screenshotPath = Path.Combine(screenshotsDir, $"{Guid.NewGuid()}.png");
+                        string screenshotPath = Path.Combine(outputDir, $"{Guid.NewGuid()}.png");
                         await CaptureScreenshotAsync(postData.Url, screenshotPath);
                         postData.ScreenshotPath = screenshotPath;
                     }
@@ -105,7 +137,7 @@ namespace PostToPoint
                 {
                     if (postData.SelfTextHTML != null)
                     {
-                        string screenshotPath = Path.Combine(screenshotsDir, $"{Guid.NewGuid()}.png");
+                        string screenshotPath = Path.Combine(outputDir, $"{Guid.NewGuid()}.png");
                         await CaptureScreenshotHtmlAsync(postData.SelfTextHTML, screenshotPath);
                         postData.ScreenshotPath = screenshotPath;
                     }
@@ -116,10 +148,22 @@ namespace PostToPoint
                 }
             }
 
-            // Create PowerPoint presentation
-            CreatePresentation(postDataList);
+            return outputDir;
+        }
 
-            Console.WriteLine("Presentation created successfully.");
+        static string GetPostImportantPart(Post post)
+        {
+            if (post is LinkPost linkPost)
+            {
+                return linkPost.URL;
+            }
+
+            if (post is SelfPost selfPost)
+            {
+                return selfPost.SelfText;
+            }
+
+            return post.Title;
         }
 
         static async Task CaptureScreenshotAsync(string url, string filePath)
@@ -274,35 +318,42 @@ namespace PostToPoint
             }
         }
 
-        static void CreatePresentation(List<PostData> postDataList)
+        static void CreatePresentation(List<PostData> postDataList, string filename)
         {
-            string filename = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss") + "-" + "PostToPoint.pptx";
-
-            //using var creator = new PresentationCreator();
-            //creator.CreatePresentation(filename);
-
+            // TODO implement a Disposable generator for the presentation
             PresentationCreator.CreatePresentation(filename);
-            //PresentationCreator.AddSlide(filename, 
-            //    "Pat was here - My Slide Title", 
-            //    @"C:\Users\pbelanger\source\repos\PostToPoint\bin\Debug\net8.0\Screenshots\7a20db1a-db93-46e5-ba1a-db5a45e55ec8.png", 
-            //    "This is a comment on the slide by Pat that was here");
 
             foreach (var postData in postDataList)
             {
                 if (postData.ScreenshotPath != null)
                 {
-                    PresentationCreator.AddSlide(filename, postData.Title, postData.ScreenshotPath, postData.GetMetadata());
+                    PresentationCreator.AddSlide(filename, postData.Title, postData.ScreenshotPath, GetPostDescriptions(postData.Post));
                     // creator.AddTitleImageSlide(postData.Title, postData.ScreenshotPath, postData.GetMetadata());
                 }
                 else
                 {
-                    PresentationCreator.AddSlide(filename, postData.Title, null, postData.GetMetadata());
+                    PresentationCreator.AddSlide(filename, postData.Title, null, GetPostDescriptions(postData.Post));
                     // creator.AddTitleHtmlSlide(postData.Title, postData.SelfTextHTML, postData.GetMetadata());
                 }
             }
         }
 
+        static string GetPostDescriptions(Post post)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"Title: {post.Title}");
+            sb.AppendLine($"Subreddit: {post.Subreddit}");
+            sb.AppendLine($"Date: {post.Created}");
+            if (post is LinkPost linkPost)
+            {
+                sb.AppendLine($"URL: {linkPost.URL}");
+            }
+            sb.AppendLine($"Permalink: {post.Permalink}");
+            sb.AppendLine($"Votes: Upvotes {post.UpVotes} ⬆️  Downvotes {post.DownVotes} ⬇️  Upvote Ratio {post.UpvoteRatio*100} %");
+            sb.AppendLine($"NSFW: {post.NSFW}");
+            //sb.AppendLine($"Comments: {post.Comments.Top[0].NumReplies}");
 
-
+            return sb.ToString();
+        }
     }
 }

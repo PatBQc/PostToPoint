@@ -1,6 +1,8 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
+using System.Drawing;
+using static System.Net.Mime.MediaTypeNames;
 using A = DocumentFormat.OpenXml.Drawing;
 using P = DocumentFormat.OpenXml.Presentation;
 
@@ -80,6 +82,11 @@ namespace PostToPoint
 
         private static void AddImageToSlide(SlidePart slidePart, string imagePath, int x, int y, int cx, int cy)
         {
+            if (string.IsNullOrWhiteSpace(imagePath))
+            {
+                return;
+            }
+
             ImagePart imagePart = slidePart.AddImagePart(ImagePartType.Png);
             using (FileStream stream = new FileStream(imagePath, FileMode.Open))
             {
@@ -109,13 +116,15 @@ namespace PostToPoint
             };
             picture.BlipFill.Append(new A.Stretch(new A.FillRectangle()));
 
+            var newSize = CalculateNewImageDimensions(imagePath, cx, cy);
+
             // Shape properties
             picture.ShapeProperties = new P.ShapeProperties()
             {
                 Transform2D = new A.Transform2D()
                 {
-                    Offset = new A.Offset() { X = x, Y = y },
-                    Extents = new A.Extents() { Cx = cx, Cy = cy }
+                    Offset = new A.Offset() { X = (cx - newSize.Width) / 2 + x, Y = y },
+                    Extents = new A.Extents() { Cx = newSize.Width, Cy = newSize.Height }
                 }
             };
 
@@ -148,6 +157,27 @@ namespace PostToPoint
                 new A.BodyProperties(),
                 new A.ListStyle(),
                 new A.Paragraph(new A.Run(new A.Text() { Text = notes })));
+        }
+
+        public static Size CalculateNewImageDimensions(string imagePath, int maxWidth, int maxHeight)
+        {
+            using (var image = System.Drawing.Image.FromFile(imagePath))
+            {
+                int originalWidth = image.Width;
+                int originalHeight = image.Height;
+
+                // Calculate ratios
+                double ratioWidth = (double)maxWidth / originalWidth;
+                double ratioHeight = (double)maxHeight / originalHeight;
+                double ratio = Math.Min(ratioWidth, ratioHeight);
+
+                // Calculate new dimensions
+                int newWidth = (int)(originalWidth * ratio);
+                int newHeight = (int)(originalHeight * ratio);
+
+                Size newSize = new Size(newWidth, newHeight);
+                return newSize;
+            }
         }
     }
 
