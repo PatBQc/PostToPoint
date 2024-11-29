@@ -5,167 +5,272 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PostToPoint.Windows"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="Post to Point" Height="700" Width="800" Background="DarkGray"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Loaded="Window_Loaded">
-    <Grid>
-        <StackPanel>
-            <GroupBox Header="Reddit Settings" Margin="10" Background="LightGray">
-                <StackPanel Margin="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+        Loaded="Window_Loaded"        
+        >
+    <Window.Resources>
+        <Style TargetType="GroupBox">
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <StackPanel>
+                <GroupBox Header="Reddit Settings" Margin="10" Background="LightGray">
+                    <StackPanel Margin="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- App ID -->
-                        <Label Grid.Row="0" Grid.Column="0" 
+                            <!-- App ID -->
+                            <Label Grid.Row="0" Grid.Column="0" 
                    Content="App ID:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" 
+                            <TextBox Grid.Row="0" Grid.Column="1" 
                      Name="txtRedditAppId" 
                      Margin="0,2"
                      Text="{Binding RedditAppId}"/>
 
-                        <!-- App Secret -->
-                        <Label Grid.Row="1" Grid.Column="0" 
+                            <!-- App Secret -->
+                            <Label Grid.Row="1" Grid.Column="0" 
                    Content="App Secret:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" 
+                            <TextBox Grid.Row="1" Grid.Column="1" 
                      Name="txtRedditAppSecret" 
                      Margin="0,2"
                      Text="{Binding RedditAppSecret}"/>
 
-                        <!-- Redirect URI -->
-                        <Label Grid.Row="2" Grid.Column="0" 
+                            <!-- Redirect URI -->
+                            <Label Grid.Row="2" Grid.Column="0" 
                    Content="Redirect URI:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" 
+                            <TextBox Grid.Row="2" Grid.Column="1" 
                      Name="txtRedditRedirectUri" 
                      Margin="0,2"
                      Text="{Binding RedditRedirectUri}"/>
 
-                        <!-- Username -->
-                        <Label Grid.Row="3" Grid.Column="0" 
+                            <!-- Username -->
+                            <Label Grid.Row="3" Grid.Column="0" 
                    Content="Username:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" 
+                            <TextBox Grid.Row="3" Grid.Column="1" 
                      Name="txtRedditUsername" 
                      Margin="0,2"
                      Text="{Binding RedditUsername}"/>
 
-                        <!-- Password -->
-                        <Label Grid.Row="4" Grid.Column="0" 
+                            <!-- Password -->
+                            <Label Grid.Row="4" Grid.Column="0" 
                    Content="Password:" 
                    VerticalAlignment="Center"/>
-                        <PasswordBox Grid.Row="4" Grid.Column="1" 
+                            <PasswordBox Grid.Row="4" Grid.Column="1" 
                          Name="pwbRedditPassword" 
                          Margin="0,2"/>
-                    </Grid>
-                </StackPanel>
-            </GroupBox>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
 
-            <GroupBox Header="LLM Prompt Post Files" Margin="10" Background="LightGray">
-                <StackPanel Margin="10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                <GroupBox Header="LLM Prompt Post Files" Margin="10" Background="LightGray">
+                    <StackPanel Margin="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <!-- Reddit to Bluesky -->
-                        <Label Grid.Row="0" Grid.Column="0" 
+                            <!-- Reddit to Bluesky -->
+                            <Label Grid.Row="0" Grid.Column="0" 
                    Content="Reddit to Bluesky:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" 
+                            <TextBox Grid.Row="0" Grid.Column="1" 
                      Name="txtRedditToBlueskyPath" 
                      Margin="0,2"
                      IsReadOnly="True"
                      Text="{Binding RedditToBlueskyPath}"/>
-                        <Button Grid.Row="0" Grid.Column="2" 
+                            <Button Grid.Row="0" Grid.Column="2" 
                     Name="btnBrowseRedditToBluesky"
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowseRedditToBluesky_Click"/>
 
-                        <!-- Reddit to Blog -->
-                        <Label Grid.Row="1" Grid.Column="0" 
+                            <!-- Reddit to Blog -->
+                            <Label Grid.Row="1" Grid.Column="0" 
                    Content="Reddit to Blog:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" 
+                            <TextBox Grid.Row="1" Grid.Column="1" 
                      Name="txtRedditToBlogPath" 
                      Margin="0,2"
                      IsReadOnly="True"
                      Text="{Binding RedditToBlogPath}"/>
-                        <Button Grid.Row="1" Grid.Column="2" 
+                            <Button Grid.Row="1" Grid.Column="2" 
                     Name="btnBrowseRedditToBlog"
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowseRedditToBlog_Click"/>
 
-                        <!-- Reddit to LinkedIn -->
-                        <Label Grid.Row="2" Grid.Column="0" 
+                            <!-- Reddit to LinkedIn -->
+                            <Label Grid.Row="2" Grid.Column="0" 
                    Content="Reddit to LinkedIn:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" 
+                            <TextBox Grid.Row="2" Grid.Column="1" 
                      Name="txtRedditToLinkedInPath" 
                      Margin="0,2"
                      IsReadOnly="True"
                      Text="{Binding RedditToLinkedInPath}"/>
-                        <Button Grid.Row="2" Grid.Column="2" 
+                            <Button Grid.Row="2" Grid.Column="2" 
                     Name="btnBrowseRedditToLinkedIn"
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowseRedditToLinkedIn_Click"/>
 
-                        <!-- Blog to Bluesky -->
-                        <Label Grid.Row="3" Grid.Column="0" 
+                            <!-- Blog to Bluesky -->
+                            <Label Grid.Row="3" Grid.Column="0" 
                    Content="Blog to Bluesky:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" 
+                            <TextBox Grid.Row="3" Grid.Column="1" 
                      Name="txtBlogToBlueskyPath" 
                      Margin="0,2"
                      IsReadOnly="True"
                      Text="{Binding BlogToBlueskyPath}"/>
-                        <Button Grid.Row="3" Grid.Column="2" 
+                            <Button Grid.Row="3" Grid.Column="2" 
                     Name="btnBrowseBlogToBluesky"
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowseBlogToBluesky_Click"/>
 
-                        <!-- Blog to LinkedIn -->
-                        <Label Grid.Row="4" Grid.Column="0" 
+                            <!-- Blog to LinkedIn -->
+                            <Label Grid.Row="4" Grid.Column="0" 
                    Content="Blog to LinkedIn:" 
                    VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" 
+                            <TextBox Grid.Row="4" Grid.Column="1" 
                      Name="txtBlogToLinkedInPath" 
                      Margin="0,2"
                      IsReadOnly="True"
                      Text="{Binding BlogToLinkedInPath}"/>
-                        <Button Grid.Row="4" Grid.Column="2" 
+                            <Button Grid.Row="4" Grid.Column="2" 
                     Name="btnBrowseBlogToLinkedIn"
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowseBlogToLinkedIn_Click"/>
-                    </Grid>
-                </StackPanel>
-            </GroupBox>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
 
-        </StackPanel>
-    </Grid>
+                <GroupBox Header="Directories" Margin="10" Background="LightGray">
+                    <StackPanel Margin="10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Blog post .md files -->
+                            <Label Grid.Row="0" Grid.Column="0" 
+                   Content="Blog post files:" 
+                   VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" 
+                     Name="txtBlogPostDirectory" 
+                     Margin="0,2"
+                     IsReadOnly="True"
+                     Text="{Binding BlogPostDirectory}"/>
+                            <Button Grid.Row="0" Grid.Column="2" 
+                    Name="btnBrowseBlogPostDir"
+                    Content="Browse"
+                    Margin="5,2"
+                    Click="btnBrowseBlogPostDir_Click"/>
+
+                            <!-- RSS files -->
+                            <Label Grid.Row="1" Grid.Column="0" 
+                   Content="RSS files:" 
+                   VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" 
+                     Name="txtRssDirectory" 
+                     Margin="0,2"
+                     IsReadOnly="True"
+                     Text="{Binding RssDirectory}"/>
+                            <Button Grid.Row="1" Grid.Column="2" 
+                    Name="btnBrowseRssDir"
+                    Content="Browse"
+                    Margin="5,2"
+                    Click="btnBrowseRssDir_Click"/>
+
+                            <!-- Post content files -->
+                            <Label Grid.Row="2" Grid.Column="0" 
+                   Content="Post content:" 
+                   VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" 
+                     Name="txtPostContentDirectory" 
+                     Margin="0,2"
+                     IsReadOnly="True"
+                     Text="{Binding PostContentDirectory}"/>
+                            <Button Grid.Row="2" Grid.Column="2" 
+                    Name="btnBrowsePostContentDir"
+                    Content="Browse"
+                    Margin="5,2"
+                    Click="btnBrowsePostContentDir_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Actions" Margin="10">
+                    <StackPanel Margin="10">
+                        <Button Name="btnGenerateBlueskyRss" 
+                Content="Generate Bluesky RSS Feed from Reddit" 
+                Padding="10,5"
+                Height="30"
+                HorizontalAlignment="Left"
+                Click="btnGenerateBlueskyRss_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsProcessing}" Value="True">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Progress indicator -->
+                        <ProgressBar Name="progressBar" 
+                     Height="2" 
+                     Margin="0,5"
+                     IsIndeterminate="True"
+                     Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </Window>

@@ -13,7 +13,7 @@ namespace PostToPoint.Windows
 {
     class RedditHelper
     {
-        public static async Task foo(string accessToken, string appId, string redirectUri, string appSecret, string username, string password, bool downloadImages)
+        public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(string appId, string redirectUri, string appSecret, string username, string password, bool downloadImages)
         {
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
@@ -22,6 +22,8 @@ namespace PostToPoint.Windows
             string sortQuery = "new"; // one of hot, new, top, rising, controversial
 
             var authenticator = new RedditAuthenticator(appId, appSecret, username, password, "PostToPoint", redirectUri);
+
+            string accessToken = null;
 
             try
             {
@@ -82,6 +84,8 @@ namespace PostToPoint.Windows
             {
                 outputDir = await DownloadAndSaveImages(batchTag, postDataList, outputDir);
             }
+
+            return postDataList;
         }
 
         private static async Task<string> DownloadAndSaveImages(string batchTag, List<RedditPostData> postDataList, string outputDir)

@@ -23,5 +23,15 @@ namespace PostToPoint.Windows
         {
             return $"Title: {Title}\nSubreddit: {Subreddit}\nDate: {Created}\nURL: {Url}";
         }
+
+        public string GetUri()
+        {
+            if (Uri.IsWellFormedUriString(Url, UriKind.Absolute))
+            {
+                return Url;
+            }
+
+            return $"https://www.reddit.com{Url}";
+        }
     }
 }

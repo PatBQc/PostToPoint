@@ -4,4 +4,4 @@
 --post-to-bluesky-prompt=post-to-bluesky-prompt.txt
 --post-to-linkedin-prompt=post-to-linkedin-prompt.txt
 --llm-choice=claude-3-5-sonnet-latest
-
+--post-content-directory=.\__posts_content

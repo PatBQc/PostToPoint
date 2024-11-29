@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using Microsoft.WindowsAPICodePack.Dialogs;
+using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,13 +30,19 @@ namespace PostToPoint.Windows
         private string _blogToBlueskyPath;
         private string _blogToLinkedInPath;
 
+        private string _blogPostDirectory;
+        private string _rssDirectory;
+        private string _postContentDirectory;
+
+        private bool _isProcessing;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public MainWindow()
         {
+            Resources.Add("BooleanToVisibilityConverter", new BooleanToVisibilityConverter());
+
             InitializeComponent();
-            
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -52,6 +60,9 @@ namespace PostToPoint.Windows
                 RedditToLinkedInPath = App.Options.PostToLinkedinPrompt;
                 BlogToBlueskyPath = App.Options.BlogToBlueskyPrompt;
                 BlogToLinkedInPath = App.Options.BlogToLinkedinPrompt;
+                BlogPostDirectory = App.Options.BlogDirectory;
+                RssDirectory = App.Options.RssDirectory;
+                PostContentDirectory = App.Options.PostContentDirectory;
             }));
 
         }
@@ -164,6 +175,47 @@ namespace PostToPoint.Windows
             }
         }
 
+        public string BlogPostDirectory
+        {
+            get => _blogPostDirectory;
+            set
+            {
+                _blogPostDirectory = value;
+                OnPropertyChanged(nameof(BlogPostDirectory));
+            }
+        }
+
+        public string RssDirectory
+        {
+            get => _rssDirectory;
+            set
+            {
+                _rssDirectory = value;
+                OnPropertyChanged(nameof(RssDirectory));
+            }
+        }
+
+        public string PostContentDirectory
+        {
+            get => _postContentDirectory;
+            set
+            {
+                _postContentDirectory = value;
+                OnPropertyChanged(nameof(PostContentDirectory));
+            }
+        }
+
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            set
+            {
+                _isProcessing = value;
+                OnPropertyChanged(nameof(IsProcessing));
+            }
+        }
+
+
         // Browse button click handlers
         private void btnBrowseRedditToBluesky_Click(object sender, RoutedEventArgs e)
         {
@@ -208,5 +260,106 @@ namespace PostToPoint.Windows
             return null;
         }
 
+        // Browse button click handlers
+        private void btnBrowseBlogPostDir_Click(object sender, RoutedEventArgs e)
+        {
+            BlogPostDirectory = BrowseForFolder("Select Blog Post Files Directory");
+        }
+
+        private void btnBrowseRssDir_Click(object sender, RoutedEventArgs e)
+        {
+            RssDirectory = BrowseForFolder("Select RSS Files Directory");
+        }
+
+        private void btnBrowsePostContentDir_Click(object sender, RoutedEventArgs e)
+        {
+            PostContentDirectory = BrowseForFolder("Select Post Content Directory");
+        }
+
+        // Helper method for folder browsing
+        private string BrowseForFolder(string description)
+        {
+            using (var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog(description))
+            {
+                dialog.IsFolderPicker = true;
+                if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
+                {
+                    string selectedPath = dialog.FileName;
+
+                    return selectedPath;
+                }
+            }
+
+            return null;
+        }
+
+        private async void btnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                IsProcessing = true;
+
+                // Validate required settings
+                if (string.IsNullOrEmpty(RedditToBlueskyPath) ||
+                    string.IsNullOrEmpty(RssDirectory) ||
+                    string.IsNullOrEmpty(RedditAppId))
+                {
+                    MessageBox.Show("Please configure all required settings before generating the RSS feed.",
+                                  "Missing Configuration",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Perform the RSS feed generation
+                await Task.Run(async () =>
+                {
+                    await GenerateBlueSkyRssFeedHelper.GenerateBlueSkyRssFeed(
+                        RedditAppId,
+                        RedditRedirectUri,
+                        RedditAppSecret,
+                        RedditUsername,
+                        GetRedditPassword(),
+                        false,
+                        "Bluesky Auto Post",
+                        "RSS feed generated by Bluesky Auto Post from Reddit Upvotes and Saved posts",
+                        "https://www.patb.ca/rss/bluesky-auto-post.rss",
+                        System.IO.Path.Combine(RssDirectory, "bluesky-auto-post.rss")
+                        );
+
+
+                });
+
+                MessageBox.Show("Bluesky RSS feed has been generated successfully!",
+                              "Success",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}",
+                              "Error",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+
+        public class BooleanToVisibilityConverter : IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                return (bool)value ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                return (Visibility)value == Visibility.Visible;
+            }
+        }
     }
 }

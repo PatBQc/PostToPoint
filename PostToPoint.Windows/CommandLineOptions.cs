@@ -45,6 +45,15 @@ namespace PostToPoint.Windows
         [Option("blog-post-template", Required = false, HelpText = "The template file for your blog post in .md format")]
         public string BlogPostTemplateFilename { get; set; }
 
+        [Option("blog-directory", Required = false, HelpText = "Blog post .md files directory")]
+        public string BlogDirectory { get; set; }
+
+        [Option("rss-directory", Required = false, HelpText = "RSS files directory")]
+        public string RssDirectory { get; set; }
+
+        [Option("post-content-directory", Required = false, HelpText = "Post content files directory (aka where images, screenshots, videos, ... will be downloaded")]
+        public string PostContentDirectory { get; set; }
+
 
     }
 }
