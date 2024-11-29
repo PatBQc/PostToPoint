@@ -8,5 +8,71 @@
         Title="MainWindow" Height="450" Width="800">
     <Grid>
 
+        
+        
+        <GroupBox Header="Reddit Settings" Margin="10">
+            <StackPanel Margin="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- App ID -->
+                    <Label Grid.Row="0" Grid.Column="0" 
+                   Content="App ID:" 
+                   VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" 
+                     Name="txtRedditAppId" 
+                     Margin="0,2"
+                     Text="{Binding RedditAppId}"/>
+
+                    <!-- App Secret -->
+                    <Label Grid.Row="1" Grid.Column="0" 
+                   Content="App Secret:" 
+                   VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" 
+                     Name="txtRedditAppSecret" 
+                     Margin="0,2"
+                     Text="{Binding RedditAppSecret}"/>
+
+                    <!-- Redirect URI -->
+                    <Label Grid.Row="2" Grid.Column="0" 
+                   Content="Redirect URI:" 
+                   VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" 
+                     Name="txtRedditRedirectUri" 
+                     Margin="0,2"
+                     Text="{Binding RedditRedirectUri}"/>
+
+                    <!-- Username -->
+                    <Label Grid.Row="3" Grid.Column="0" 
+                   Content="Username:" 
+                   VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="3" Grid.Column="1" 
+                     Name="txtRedditUsername" 
+                     Margin="0,2"
+                     Text="{Binding RedditUsername}"/>
+
+                    <!-- Password -->
+                    <Label Grid.Row="4" Grid.Column="0" 
+                   Content="Password:" 
+                   VerticalAlignment="Center"/>
+                    <PasswordBox Grid.Row="4" Grid.Column="1" 
+                         Name="pwbRedditPassword" 
+                         Margin="0,2"/>
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+        
+        
+
     </Grid>
 </Window>

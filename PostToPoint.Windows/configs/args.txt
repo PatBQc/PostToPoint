@@ -1,0 +1,2 @@
+﻿--buffer-profile-id-bluesky=foobar
+--post-to-bluesky-prompt=post-to-bluesky-prompt.txt
