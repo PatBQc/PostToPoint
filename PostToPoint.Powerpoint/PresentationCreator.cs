@@ -6,7 +6,7 @@ using static System.Net.Mime.MediaTypeNames;
 using A = DocumentFormat.OpenXml.Drawing;
 using P = DocumentFormat.OpenXml.Presentation;
 
-namespace PostToPoint
+namespace PostToPoint.Powerpoint
 {
 
     public class PresentationCreator

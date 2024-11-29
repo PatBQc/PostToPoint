@@ -15,7 +15,7 @@ using System.Drawing;
 using System.Net;
 using System.Text;
 
-namespace PostToPoint
+namespace PostToPoint.Powerpoint
 {
     class Program
     {

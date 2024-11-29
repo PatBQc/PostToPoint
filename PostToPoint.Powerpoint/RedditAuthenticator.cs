@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
 
-namespace PostToPoint
+namespace PostToPoint.Powerpoint
 {
     public class RedditAuthenticator
     {
