@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PostToPoint.Windows": {
+      "commandName": "Project",
+      "commandLineArgs": "@args.secret"
+    }
+  }
+}
