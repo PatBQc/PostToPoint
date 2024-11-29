@@ -39,7 +39,7 @@ namespace PostToPoint.Windows
         [Option("post-to-linkedin-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a reddit post to LinkedIn")]
         public string PostToLinkedinPrompt { get; set; }
 
-        [Option("llm-choice", Required = false, HelpText = "LLM Choice to work with (includes only 'claude-3-5-sonnet-latest' is supported)")]
+        [Option("llm-choice", Required = false, HelpText = "LLM Choice to work with (includes only 'claude-3-5-sonnet-latest' is supported)", Default = "claude-3-5-sonnet-latest")]
         public string LlmChoice { get; set; }
 
         [Option("blog-post-template", Required = false, HelpText = "The template file for your blog post in .md format")]

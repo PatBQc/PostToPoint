@@ -1,1 +1,5 @@
-﻿Transform this from a Reddit post to a good summary and engaging Bluesky post, written in french, with 3 to 5 hashtags in less then 250 caracters total.  Just the content of the BlueSky post and nothing else, no comments, nothing more and nothing less.
+﻿Transform this from a Reddit post to a good summary and engaging Bluesky post.
+It must be written in french.
+It must contain 3 to 5 hashtags.
+It must be less then 250 caracters total.  
+IMPORTANT: ANSWER WITH ONLY THE CONTENT OF THE BLUESKY POST.  NOTHING ELSE.  NO ADDITIONNAL COMMENTS.
