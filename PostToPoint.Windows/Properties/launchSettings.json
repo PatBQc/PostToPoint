@@ -2,7 +2,7 @@
   "profiles": {
     "PostToPoint.Windows": {
       "commandName": "Project",
-      "commandLineArgs": "@args.secret"
+      "commandLineArgs": "@configs/args.secret @configs/args.txt"
     }
   }
 }

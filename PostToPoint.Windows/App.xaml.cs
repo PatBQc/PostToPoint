@@ -16,14 +16,6 @@ namespace PostToPoint.Windows
     {
         public static CommandLineOptions Options = new CommandLineOptions();
 
-        [STAThread]
-        public static void Main2(string[] args)
-        {
-            var application = new App();
-            application.InitializeComponent();
-            application.Run();
-        }
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

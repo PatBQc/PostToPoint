@@ -1,2 +1,7 @@
-﻿--buffer-profile-id-bluesky=foobar
+﻿--blog-to-bluesky-prompt=blog-to-bluesky-prompt.txt
+--blog-to-linkedin-prompt=blog-to-linkedin-prompt.txt
+--post-to-blog-prompt=post-to-blog-prompt.txt
 --post-to-bluesky-prompt=post-to-bluesky-prompt.txt
+--post-to-linkedin-prompt=post-to-linkedin-prompt.txt
+--llm-choice=claude-3-5-sonnet-latest
+

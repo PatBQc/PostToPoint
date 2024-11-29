@@ -21,14 +21,23 @@ namespace PostToPoint.Windows
         [Option("reddit-app-secret", Required = false, HelpText = "Your Reddit client secret")]
         public string RedditAppSecret { get; set; }
 
-        [Option("buffer-access-token", Required = false, HelpText = "Your Buffer access token")]
-        public string BufferAccessToken { get; set; }
+        [Option("reddit-redirect-uri", Required = false, HelpText = "Your Reddit redirect uri.  Must be the same as configured with your client ID")]
+        public string RedditRedirectUri { get; set; }
 
-        [Option("buffer-profile-id-bluesky", Required = false, HelpText = "Your Bluesky Buffer profile ID")]
-        public string BufferProfileId { get; set; }
+        [Option("blog-to-bluesky-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a blog post to Bluesky")]
+        public string BlogToBlueskyPrompt { get; set; }
 
-        [Option("post-to-bluesky-prompt", Required = false, HelpText = "Filename for LLM Prompt to post to Bluesky through Buffer profile")]
+        [Option("blog-to-linkedin-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a blog post to LinkedIn")]
+        public string BlogToLinkedinPrompt { get; set; }
+
+        [Option("post-to-blog-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a reddit post to blog")]
+        public string PostToBlogPrompt { get; set; }
+
+        [Option("post-to-bluesky-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a reddit post to Bluesky")]
         public string PostToBlueskyPrompt { get; set; }
+
+        [Option("post-to-linkedin-prompt", Required = false, HelpText = "Filename for LLM Prompt to convert a reddit post to LinkedIn")]
+        public string PostToLinkedinPrompt { get; set; }
 
         [Option("llm-choice", Required = false, HelpText = "LLM Choice to work with (includes only 'claude-3-5-sonnet-latest' is supported)")]
         public string LlmChoice { get; set; }
