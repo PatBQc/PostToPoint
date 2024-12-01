@@ -37,51 +37,18 @@ namespace PostToPoint.Windows
             // Get upvoted and saved posts from Reddit using RedditHelper class in this project
             var redditPosts = await RedditHelper.GetMyImportantRedditPosts(appId, redirectUri, appSecret, username, password, downloadImages);
 
-            // redditPosts.Sort((x, y) => -1 * y.Created.CompareTo(x.Created));
-
-            var redditToBlueskyPrompt = File.ReadAllText(redditToBlueskyFilename);
-
+            // We will ground our request with context from the mission, the blog posts and the Reddit posts
             List<LlmUserAgentMessagePair> previousMessages = new List<LlmUserAgentMessagePair>();
 
-            // Start the Conversation with the LLM
-            previousMessages.Add(new LlmUserAgentMessagePair()
-            {
-                UserMessage = """
-                You will have to create a Bluesky post.  Bluesky is a microblogging platform like Twitter.
-                I will provide example blog posts I written to get a sense of the style and angle provided in the reference blog posts for your writting.
-                I will then give you give you the Reddit Post to work from.
-                You will receive my instruction after that, where you will answer only with your writing, nothing more as you know is important.
-                """,
-                AgentMessage = "Excellent, I will create a Bluesky post from a Reddit post using the style and angle provided in the reference blog posts.  I also understand that my answer for the post will only contain the post, nothing more."
-            });
+            // Start the Conversation with the LLM by specifying our mission
+            AppendMissionMessages(previousMessages);
 
             // Append the blog posts to the conversation
-            StringBuilder sbBlogs = new StringBuilder();
-            foreach (var blogPost in System.IO.Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x))
-            {
-                sbBlogs.AppendLine("---------------------------------------------------------------");
-                sbBlogs.AppendLine("Blog post " + blogPost);
-                sbBlogs.AppendLine("---------------------------------------------------------------");
-                sbBlogs.AppendLine(System.IO.File.ReadAllText(blogPost));
-                sbBlogs.AppendLine("---------------------------------------------------------------");
-                sbBlogs.AppendLine("End of blog post" + blogPost);
-                sbBlogs.AppendLine("---------------------------------------------------------------");
-                sbBlogs.AppendLine();
-            }
-
-            previousMessages.Add(new LlmUserAgentMessagePair()
-            {
-                UserMessage = $"""
-                Here are the reference blog posts that you should use to create the Bluesky post.
-                Understand the point of view, the style, and the angle of the blog posts.
-                ---------------------------------------------------------------
-                {sbBlogs.ToString()}
-                ---------------------------------------------------------------
-                """,
-                AgentMessage = "Excellent, I understant your style, your point of view and how you thrive to walk the middle ground while beeing engaging and to bring within everyone’s reach.  I also understand that my answer for the post will only contain the post, nothing more."
-            });
+            AppendBlogContextMessages(previousMessages, blogPostDirectory);
 
             // transform reddit posts to rss items using System.ServiceModel.Syndication
+            var redditToBlueskyPrompt = File.ReadAllText(redditToBlueskyFilename);
+
             var rssItems = new List<SyndicationItem>();
             Debug.WriteLine("");
             Debug.WriteLine("Reddit posts count: " + redditPosts.Count);
@@ -90,17 +57,9 @@ namespace PostToPoint.Windows
             {
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
+
                 // Append the Reddit posts to the conversation
-                previousMessages.Add(new LlmUserAgentMessagePair()
-                {
-                    UserMessage = $"""
-                    Here is the Reddit post I would like to convert to a Bluesky post:
-                    ---------------------------------------------------------------
-                    {redditPost.GetCompleteContent()}
-                    ---------------------------------------------------------------
-                    """,
-                    AgentMessage = "Excellent, I will create a Bluesky post from this Reddit post using the style and angle provided in the reference blog posts.  I also understand that my answer for the post will only contain the post, nothing more."
-                });
+                AppendRedditPostMessages(previousMessages, redditPost);
 
 
                 // We will prompt the LLM to convert the reddit posts to Blue Sky posts
@@ -183,6 +142,62 @@ namespace PostToPoint.Windows
                 formatter.WriteTo(writer);
             }
 
+        }
+
+        private static void AppendRedditPostMessages(List<LlmUserAgentMessagePair> previousMessages, RedditPostData redditPost)
+        {
+            previousMessages.Add(new LlmUserAgentMessagePair()
+            {
+                UserMessage = $"""
+                    Here is the Reddit post I would like to convert to a Bluesky post:
+                    ---------------------------------------------------------------
+                    {redditPost.GetCompleteContent()}
+                    ---------------------------------------------------------------
+                    """,
+                AgentMessage = "Excellent, I will create a Bluesky post from this Reddit post using the style and angle provided in the reference blog posts.  I also understand that my answer for the post will only contain the post, nothing more."
+            });
+        }
+
+        private static void AppendMissionMessages(List<LlmUserAgentMessagePair> previousMessages)
+        {
+            previousMessages.Add(new LlmUserAgentMessagePair()
+            {
+                UserMessage = """
+                You will have to create a Bluesky post.  Bluesky is a microblogging platform like Twitter.
+                I will provide example blog posts I written to get a sense of the style and angle provided in the reference blog posts for your writting.
+                I will then give you give you the Reddit Post to work from.
+                You will receive my instruction after that, where you will answer only with your writing, nothing more as you know is important.
+                """,
+                AgentMessage = "Excellent, I will create a Bluesky post from a Reddit post using the style and angle provided in the reference blog posts.  I also understand that my answer for the post will only contain the post, nothing more."
+            });
+        }
+
+        private static void AppendBlogContextMessages(List<LlmUserAgentMessagePair> previousMessages, string blogPostDirectory)
+        {
+            StringBuilder sbBlogs = new StringBuilder();
+            foreach (var blogPost in System.IO.Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x))
+            {
+                sbBlogs.AppendLine("---------------------------------------------------------------");
+                sbBlogs.AppendLine("Blog post " + blogPost);
+                sbBlogs.AppendLine("---------------------------------------------------------------");
+                sbBlogs.AppendLine(System.IO.File.ReadAllText(blogPost));
+                sbBlogs.AppendLine("---------------------------------------------------------------");
+                sbBlogs.AppendLine("End of blog post" + blogPost);
+                sbBlogs.AppendLine("---------------------------------------------------------------");
+                sbBlogs.AppendLine();
+            }
+
+            previousMessages.Add(new LlmUserAgentMessagePair()
+            {
+                UserMessage = $"""
+                Here are the reference blog posts that you should use to create the Bluesky post.
+                Understand the point of view, the style, and the angle of the blog posts.
+                ---------------------------------------------------------------
+                {sbBlogs.ToString()}
+                ---------------------------------------------------------------
+                """,
+                AgentMessage = "Excellent, I understant your style, your point of view and how you thrive to walk the middle ground while beeing engaging and to bring within everyone’s reach.  I also understand that my answer for the post will only contain the post, nothing more."
+            });
         }
 
         private static string GetMimeType(string itemUri)
