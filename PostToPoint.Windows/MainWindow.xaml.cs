@@ -33,6 +33,7 @@ namespace PostToPoint.Windows
         private string _blogPostDirectory;
         private string _rssDirectory;
         private string _postContentDirectory;
+        private string _redirectDirectory;
 
         private bool _isProcessing;
 
@@ -63,6 +64,7 @@ namespace PostToPoint.Windows
                 BlogPostDirectory = App.Options.BlogDirectory;
                 RssDirectory = App.Options.RssDirectory;
                 PostContentDirectory = App.Options.PostContentDirectory;
+                RedirectDirectory = App.Options.RedirectDirectory;
             }));
 
         }
@@ -205,6 +207,16 @@ namespace PostToPoint.Windows
             }
         }
 
+        public string RedirectDirectory
+        {
+            get => _redirectDirectory;
+            set
+            {
+                _redirectDirectory = value;
+                OnPropertyChanged(nameof(RedirectDirectory));
+            }
+        }
+
         public bool IsProcessing
         {
             get => _isProcessing;
@@ -276,6 +288,11 @@ namespace PostToPoint.Windows
             PostContentDirectory = BrowseForFolder("Select Post Content Directory");
         }
 
+        private void btnBrowseRedirectDir_Click(object sender, RoutedEventArgs e)
+        {
+            RedirectDirectory = BrowseForFolder("Select Redirect Directory");
+        }
+
         // Helper method for folder browsing
         private string BrowseForFolder(string description)
         {
@@ -329,7 +346,8 @@ namespace PostToPoint.Windows
                         BlogPostDirectory,
                         App.Options.LlmChoice,
                         RedditToBlueskyPath,
-                        PostContentDirectory
+                        PostContentDirectory,
+                        RedirectDirectory
                         );
 
 

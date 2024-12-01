@@ -54,6 +54,9 @@ namespace PostToPoint.Windows
         [Option("post-content-directory", Required = false, HelpText = "Post content files directory (aka where images, screenshots, videos, ... will be downloaded")]
         public string PostContentDirectory { get; set; }
 
+        [Option("redirect-directory", Required = false, HelpText = "The directory where to put the redirects")]
+        public string RedirectDirectory { get; set; }
+
 
     }
 }

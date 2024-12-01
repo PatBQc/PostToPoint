@@ -192,6 +192,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <!-- Blog post .md files -->
@@ -238,6 +239,22 @@
                     Content="Browse"
                     Margin="5,2"
                     Click="btnBrowsePostContentDir_Click"/>
+
+                            <!-- Post content files -->
+                            <Label Grid.Row="3" Grid.Column="0" 
+                   Content="Redirects :" 
+                   VerticalAlignment="Center"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" 
+                     Name="txtRedirectDirectory" 
+                     Margin="0,2"
+                     IsReadOnly="True"
+                     Text="{Binding PostContentDirectory}"/>
+                            <Button Grid.Row="3" Grid.Column="2" 
+                    Name="btnBrowseRedirectDir"
+                    Content="Browse"
+                    Margin="5,2"
+                    Click="btnBrowseRedirectDir_Click"/>
+
                         </Grid>
                     </StackPanel>
                 </GroupBox>

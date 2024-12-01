@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection.Metadata.Ecma335;
+using System.Security.Cryptography;
 using System.Security.Policy;
 using System.ServiceModel.Syndication;
 using System.Text;
@@ -31,7 +33,8 @@ namespace PostToPoint.Windows
             string blogPostDirectory,
             string llmChoice,
             string redditToBlueskyFilename,
-            string postContentDirectory
+            string postContentDirectory,
+            string redirectDirectory
             )
         {
             // Get upvoted and saved posts from Reddit using RedditHelper class in this project
@@ -70,14 +73,16 @@ namespace PostToPoint.Windows
 
                 // var description = "This is a test description for the RSS feed item";
 
-                var uriLength = redditPost.GetUri().Length + 1;
+                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory);
 
-                if (description.Length > 270)
+                var uriLength = shortUri.Length + 1;
+
+                if (description.Length > 300 - uriLength - 1)
                 {
-                    description = description.Substring(0, 270) + "...";
+                    description = description.Substring(0, 300 - uriLength - 1);
                 }
 
-                var item = new SyndicationItem(redditPost.Title, description, new Uri(redditPost.GetUri()), redditPost.Post.Id, new DateTimeOffset(redditPost.Created.ToUniversalTime(), TimeSpan.Zero));
+                var item = new SyndicationItem(redditPost.Title, description, new Uri(shortUri), redditPost.Post.Id, new DateTimeOffset(redditPost.Created.ToUniversalTime(), TimeSpan.Zero));
                 item.PublishDate = redditPost.Created;
 
                 var itemUri = redditPost.GetUri();
@@ -143,6 +148,86 @@ namespace PostToPoint.Windows
             }
 
         }
+
+        private static string ShortenUri(string uri, string redirectDirectory)
+        {
+            var uriHash = CalculateUriHash(uri);
+
+            var directory = Path.Combine(redirectDirectory, uriHash);
+            Directory.CreateDirectory(directory);
+
+            var uriFilenameInUri = ToBase36(Directory.GetFiles(directory).Length);
+
+            var slug = $"{uriHash}{uriFilenameInUri}";
+            var shortUri = $"https://patb.ca/r/{slug}";
+
+            var templateFilename = Path.Combine(redirectDirectory, "_template.md");
+
+            // The template file should match this format
+            // ---
+            // layout: redirect
+            // title               : "{title}"
+            // subheadline: "{subheadline}"
+            // teaser: "{teaser}"
+            // lang: fr
+            // header:
+            //     image_fullwidth: "header_projets.webp"
+            // permalink: "/goto/{slug}"
+            // ref                 : "/goto/{slug}"
+            // sitemap: false
+            // redirect_to: { redirect}
+            // ---
+
+            var template = File.ReadAllText(templateFilename);
+            template = template.Replace("{title}", "Redirecting...");
+            template = template.Replace("{subheadline}", "Redirecting...");
+            template = template.Replace("{teaser}", "Redirecting...");
+            template = template.Replace("{slug}", $"{slug}");
+            template = template.Replace("{redirect}", uri);
+
+            var filename = Path.Combine(directory, $"{DateTime.Now.ToString("yyyy-MM-dd")}-{uriFilenameInUri}.md");
+            File.WriteAllText(filename, template);
+
+            return shortUri;
+        }
+
+        private static string CalculateUriHash(string uri)
+        {
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(uri);
+                byte[] hash = sha256.ComputeHash(bytes);
+
+                int hash36 = Math.Abs(BitConverter.ToInt32(hash, 0) % (36 * 36 + 1));
+
+                return ToBase36(hash36);
+            }
+        }
+
+        private static string ToBase36(long number)
+        {
+            string digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+            if (number == 0) return "0";
+
+            bool isNegative = number < 0;
+            number = Math.Abs(number);
+
+            var result = new StringBuilder();
+
+            while (number > 0)
+            {
+                var remainder = (int)(number % 36);
+                result.Insert(0, digits[remainder]);
+                number /= 36;
+            }
+
+            if (isNegative)
+                result.Insert(0, '-');
+
+            return result.ToString();
+        }
+
 
         private static void AppendRedditPostMessages(List<LlmUserAgentMessagePair> previousMessages, RedditPostData redditPost)
         {
