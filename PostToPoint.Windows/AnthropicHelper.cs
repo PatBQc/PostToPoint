@@ -52,6 +52,7 @@ namespace PostToPoint.Windows
                 Model = AnthropicModels.Claude35Sonnet,
                 Stream = false,
                 Temperature = 0.4m,
+                PromptCaching = PromptCacheType.Messages
             };
 
             var firstResult = await client.Messages.GetClaudeMessageAsync(parameters);

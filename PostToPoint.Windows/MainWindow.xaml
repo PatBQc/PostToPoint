@@ -240,7 +240,7 @@
                     Margin="5,2"
                     Click="btnBrowsePostContentDir_Click"/>
 
-                            <!-- Post content files -->
+                            <!-- Redirect directory -->
                             <Label Grid.Row="3" Grid.Column="0" 
                    Content="Redirects :" 
                    VerticalAlignment="Center"/>
@@ -248,7 +248,7 @@
                      Name="txtRedirectDirectory" 
                      Margin="0,2"
                      IsReadOnly="True"
-                     Text="{Binding PostContentDirectory}"/>
+                     Text="{Binding RedirectDirectory}"/>
                             <Button Grid.Row="3" Grid.Column="2" 
                     Name="btnBrowseRedirectDir"
                     Content="Browse"

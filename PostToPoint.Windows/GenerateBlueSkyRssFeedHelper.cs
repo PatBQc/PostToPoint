@@ -71,9 +71,7 @@ namespace PostToPoint.Windows
 
                 previousMessages.RemoveAt(previousMessages.Count - 1);
 
-                // var description = "This is a test description for the RSS feed item";
-
-                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory);
+                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory, redditPost.Title, description, redditPost.Title + " " + description + " " + redditPost.GetUri());
 
                 var uriLength = shortUri.Length + 1;
 
@@ -96,16 +94,15 @@ namespace PostToPoint.Windows
                 {
                     // Querry Reddit Json to find the video stream
                     var videoStream = await RedditHelper.GetRedditVideoStream(redditPost);
+                    var videoFilename = Path.Combine(postContentDirectory, Path.GetFileName(itemUri) + "-" + Path.GetFileName(videoStream));
 
                     // Download video and save it in the post content directory
                     using var httpClient = new HttpClient();
                     httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("PostToPoint/1.0");
 
-                    var videoFilename = Path.Combine(postContentDirectory, Path.GetFileName(itemUri));
+                    var video = await httpClient.GetByteArrayAsync(videoStream);
 
                     Directory.CreateDirectory(postContentDirectory);
-
-                    var video = await httpClient.GetByteArrayAsync(videoStream);
                     File.WriteAllBytes(videoFilename, video);
 
                     // TODO you are here ;)
@@ -149,7 +146,7 @@ namespace PostToPoint.Windows
 
         }
 
-        private static string ShortenUri(string uri, string redirectDirectory)
+        private static string ShortenUri(string uri, string redirectDirectory, string title, string subheadline, string teaser)
         {
             var uriHash = CalculateUriHash(uri);
 
@@ -172,16 +169,16 @@ namespace PostToPoint.Windows
             // lang: fr
             // header:
             //     image_fullwidth: "header_projets.webp"
-            // permalink: "/goto/{slug}"
-            // ref                 : "/goto/{slug}"
+            // permalink: "/r/{slug}"
+            // ref                 : "/r/{slug}"
             // sitemap: false
             // redirect_to: { redirect}
             // ---
 
             var template = File.ReadAllText(templateFilename);
-            template = template.Replace("{title}", "Redirecting...");
-            template = template.Replace("{subheadline}", "Redirecting...");
-            template = template.Replace("{teaser}", "Redirecting...");
+            template = template.Replace("{title}", CleanForMarkdownMeta(title));
+            template = template.Replace("{subheadline}", CleanForMarkdownMeta(subheadline));
+            template = template.Replace("{teaser}", CleanForMarkdownMeta(teaser));
             template = template.Replace("{slug}", $"{slug}");
             template = template.Replace("{redirect}", uri);
 
@@ -189,6 +186,19 @@ namespace PostToPoint.Windows
             File.WriteAllText(filename, template);
 
             return shortUri;
+        }
+
+        private static string CleanForMarkdownMeta(string unsafeString)
+        {
+            string unsafeChars = "\"\'\r\n<>";
+
+            string safeString = unsafeString;
+            foreach (char c in unsafeChars)
+            {
+                safeString = safeString.Replace(c, ' ');
+            }
+
+            return safeString;
         }
 
         private static string CalculateUriHash(string uri)
@@ -260,7 +270,7 @@ namespace PostToPoint.Windows
         private static void AppendBlogContextMessages(List<LlmUserAgentMessagePair> previousMessages, string blogPostDirectory)
         {
             StringBuilder sbBlogs = new StringBuilder();
-            foreach (var blogPost in System.IO.Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x))
+            foreach (var blogPost in System.IO.Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x).Take(1))
             {
                 sbBlogs.AppendLine("---------------------------------------------------------------");
                 sbBlogs.AppendLine("Blog post " + blogPost);

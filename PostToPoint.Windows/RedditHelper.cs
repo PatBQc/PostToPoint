@@ -22,7 +22,7 @@ namespace PostToPoint.Windows
         {
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
-            DateTime oldestPostAccepted = DateTime.Now.AddDays(-7);
+            DateTime oldestPostAccepted = DateTime.Now.AddDays(-1);
             string timeQuery = "week"; // one of hour, day, week, month, year, all
             string sortQuery = "new"; // one of hot, new, top, rising, controversial
 

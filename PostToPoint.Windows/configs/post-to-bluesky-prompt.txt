@@ -1,6 +1,6 @@
 ﻿Provide only the direct answer to the following question, without any explanation or additional context:
 
-You will be transforming a Reddit post into a concise and engaging Bluesky post in French. Follow these steps carefully:
+You will be transforming a Reddit post into a concise and engaging Bluesky post in French (Canadian french or Québec french). Follow these steps carefully:
 
 1. Here is the Reddit post content in the section "# REDDIT POST"
 
