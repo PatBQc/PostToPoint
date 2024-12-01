@@ -6,13 +6,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PostToPoint.Windows
 {
     class RedditHelper
     {
+        private static string _accessToken = null;
+
         public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(string appId, string redirectUri, string appSecret, string username, string password, bool downloadImages)
         {
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
@@ -23,12 +28,10 @@ namespace PostToPoint.Windows
 
             var authenticator = new RedditAuthenticator(appId, appSecret, username, password, "PostToPoint", redirectUri);
 
-            string accessToken = null;
-
             try
             {
-                accessToken = await authenticator.GetAccessTokenAsync();
-                Console.WriteLine($"Access Token: {accessToken}");
+                _accessToken = await authenticator.GetAccessTokenAsync();
+                Console.WriteLine($"Access Token: {_accessToken}");
             }
             catch (Exception ex)
             {
@@ -36,7 +39,7 @@ namespace PostToPoint.Windows
             }
 
             // Initialize Reddit client
-            var reddit = new RedditClient(appId: appId, appSecret: appSecret, accessToken: accessToken);
+            var reddit = new RedditClient(appId: appId, appSecret: appSecret, accessToken: _accessToken); 
 
             // Get saved posts (change to GetUpvoted for liked posts)
             var savedPosts = reddit.Account.Me.GetPostHistory(where: "saved", context: 3, t: timeQuery, limit: 100, sort: sortQuery);
@@ -314,6 +317,32 @@ namespace PostToPoint.Windows
             //sb.AppendLine($"Comments: {post.Comments.Top[0].NumReplies}");
 
             return sb.ToString();
+        }
+
+        internal static async Task<string> GetRedditVideoStream(RedditPostData postData)
+        {
+            string uri = "https://www.reddit.com" + postData.Post.Permalink + ".json";
+            uri = uri.Replace("/.json", ".json");
+
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("PostToPoint/1.0");
+
+            var response = await httpClient.GetAsync(uri);
+            var jsonString = await response.Content.ReadAsStringAsync();
+
+            using JsonDocument document = JsonDocument.Parse(jsonString);
+            JsonElement root = document.RootElement;
+
+            string fallbackUrl = root[0]
+                .GetProperty("data")
+                .GetProperty("children")[0]
+                .GetProperty("data")
+                .GetProperty("secure_media")
+                .GetProperty("reddit_video")
+                .GetProperty("fallback_url")
+                .GetString();
+
+            return fallbackUrl;
         }
     }
 }

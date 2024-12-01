@@ -46,7 +46,7 @@ namespace PostToPoint.Windows
                 return Url;
             }
 
-            return $"https://www.reddit.com{Url}";
+            return $"https://www.reddit.com{Post.Permalink}";
         }
 
         public static string GetFormattedComments(Post post, int maxDepth = -1, int maxComments = -1)

@@ -12,7 +12,16 @@ namespace PostToPoint.Windows
 {
     public class AnthropicHelper
     {
-        public static async Task<string> CallClaude(string llmQuery, string llmChoice)
+        private static string SystemMessage = """
+            You are an expert writer, giving your answer as asked without explaining what you are doing (you know that would'nt be professionnal).
+            Provide only the direct answer without any introduction or conclusion.
+            Skip any preamble and give me just the requested information.
+            Always omit introductions and conclusions in its responses.
+            Give me just the raw answer.
+            Answer directly without preamble.
+            """;
+
+        public static async Task<string> CallClaude(IEnumerable<LlmUserAgentMessagePair> previousMessages, string llmQuery, string llmChoice)
         {
             if (llmChoice != "claude-3-5-sonnet-latest")
             {
@@ -23,14 +32,21 @@ namespace PostToPoint.Windows
             // TODO pass the value through the command line / UI as well
             var client = new AnthropicClient();
 
-            var messages = new List<Anthropic.SDK.Messaging.Message>()
+            var messages = new List<Anthropic.SDK.Messaging.Message>();
+
+            foreach (var pair in previousMessages)
             {
-                new Anthropic.SDK.Messaging.Message(RoleType.User, llmQuery)
-            };
+                messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.User, pair.UserMessage));
+                messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.Assistant, pair.AgentMessage));
+            }
+
+            messages.Add(new Anthropic.SDK.Messaging.Message(RoleType.User, llmQuery));
+
 
             // TODO configure those through config as well
             var parameters = new MessageParameters()
             {
+                System = new List<SystemMessage> { new SystemMessage(SystemMessage) },
                 Messages = messages,
                 MaxTokens = 1024 * 8,
                 Model = AnthropicModels.Claude35Sonnet,
