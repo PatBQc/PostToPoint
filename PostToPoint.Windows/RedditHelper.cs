@@ -342,6 +342,8 @@ namespace PostToPoint.Windows
                 .GetProperty("fallback_url")
                 .GetString();
 
+            fallbackUrl = fallbackUrl.Substring(0, fallbackUrl.IndexOf("?"));
+
             return fallbackUrl;
         }
     }

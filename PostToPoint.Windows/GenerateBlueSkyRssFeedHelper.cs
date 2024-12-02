@@ -66,7 +66,9 @@ namespace PostToPoint.Windows
 
 
                 // We will prompt the LLM to convert the reddit posts to Blue Sky posts
-                var description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
+                //var description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
+                var description = "This is a test description";
+
                 description = CleanupText(description);
 
                 previousMessages.RemoveAt(previousMessages.Count - 1);
@@ -90,37 +92,29 @@ namespace PostToPoint.Windows
                     item.Links.Add(new SyndicationLink(new Uri(itemUri), "related", "image", GetMimeType(itemUri), await GetLength(itemUri)));
                 }
 
-                if (itemUri.Contains("   /v.redd.it/"))
+                if (itemUri.Contains("/v.redd.it/"))
                 {
-                    // Querry Reddit Json to find the video stream
+                    // Download video using yt-dlp (similar to once known youtube-dl)
                     var videoStream = await RedditHelper.GetRedditVideoStream(redditPost);
                     var videoFilename = Path.Combine(postContentDirectory, Path.GetFileName(itemUri) + "-" + Path.GetFileName(videoStream));
-
-                    // Download video and save it in the post content directory
-                    using var httpClient = new HttpClient();
-                    httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("PostToPoint/1.0");
-
-                    var video = await httpClient.GetByteArrayAsync(videoStream);
-
-                    Directory.CreateDirectory(postContentDirectory);
-                    File.WriteAllBytes(videoFilename, video);
-
-                    // TODO you are here ;)
-
-                    // Download the audio part of the video
-
-                    // Combine video + audio with FFMPEG
+                    YtdlpHelper.DownloadVideo(redditPost.GetUri(), videoFilename);
 
                     // Trim to max 59 secondes
-                    // TODO FFMPEG
+                    string shortVideoFilename = Path.Combine(Path.GetDirectoryName(videoFilename), Path.GetFileNameWithoutExtension(videoFilename) + "-59s" + Path.GetExtension(videoFilename));
+                    FfmpegHelper.ShortenVideo(videoFilename, shortVideoFilename);
 
-                    // Upload to Bluesky
+                    // Upload to OneDrive and get a sharable file link for direct download
+                    // TODO Replace with the correct CommandLine Args --> UI --> Function Call
+                    OneDriveUploader uploader = new OneDriveUploader(App.Options.OneDriveApplicationClientId,
+                        App.Options.OneDriveDirectoryTenantId,
+                        App.Options.OneDriveClientSecretValue);
+                    var (shareLink, fileId) = await uploader.UploadLargeFileAndGetShareLink(shortVideoFilename);
 
                     // Add link to Bluesky post in the RSS feed
                 }
 
                 // Just for this once ;)
-                await Task.Delay(20000);
+                // await Task.Delay(20000);
 
 
                 rssItems.Add(item);
