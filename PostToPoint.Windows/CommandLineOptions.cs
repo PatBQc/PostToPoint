@@ -57,22 +57,14 @@ namespace PostToPoint.Windows
         [Option("redirect-directory", Required = false, HelpText = "The directory where to put the redirects")]
         public string RedirectDirectory { get; set; }
 
-
-
-        // New options to add as [Option] properties in this class
-        // --onedrive-application-client-id
-        // --onedrive-directory-tenant-id
-        // --onedrive-client-secret-value
-        // --onedrive-client-secret-id
-
         [Option("onedrive-application-client-id", Required = false, HelpText = "Your OneDrive application client ID")]
         public string OneDriveApplicationClientId { get; set; }
 
-        [Option("onedrive-directory-tenant-id", Required = false, HelpText = "Your OneDrive directory tenant ID")]
-        public string OneDriveDirectoryTenantId { get; set; }
+        [Option("onedrive-drive-id", Required = false, HelpText = "Your OneDrive drive id")]
+        public string OneDriveDriveId { get; set; }
 
-        [Option("onedrive-client-secret-value", Required = false, HelpText = "Your OneDrive client secret value")]
-        public string OneDriveClientSecretValue { get; set; }
+        [Option("onedrive-folder-id", Required = false, HelpText = "Your OneDrive folder id in the same drive as specified in drive id")]
+        public string OneDriveFolderId { get; set; }
 
     }
 }

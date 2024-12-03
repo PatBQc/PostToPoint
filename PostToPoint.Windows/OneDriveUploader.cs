@@ -15,21 +15,20 @@ namespace PostToPoint.Windows
     {
         // Replace these values with your own Azure AD application details
         private readonly string ClientId;
-        private readonly string TenantId;
         private readonly string ClientSecret;
-        private readonly string DriveId = "";
-        private readonly string FolderId = "";
+        private readonly string DriveId;
+        private readonly string FolderId;
 
         private readonly List<string> scopes = new List<string> { "Files.ReadWrite.All", "offline_access" };
 
         private HttpClient _httpClient = null;
 
 
-        public OneDriveUploader(string clientId, string tenantId, string clientSecret)
+        public OneDriveUploader(string clientId, string driveId, string folderId)
         {
             ClientId = clientId;
-            TenantId = "common";
-            ClientSecret = clientSecret;
+            DriveId = driveId;
+            FolderId = folderId;
         }
 
 
@@ -47,7 +46,7 @@ namespace PostToPoint.Windows
                     var app = PublicClientApplicationBuilder
                         .Create(ClientId)
                         .WithRedirectUri("http://localhost")
-                        .WithAuthority($"https://login.microsoftonline.com/{TenantId}")
+                        .WithAuthority($"https://login.microsoftonline.com/common")
                         .Build();
 
                     // Enable token cache serialization

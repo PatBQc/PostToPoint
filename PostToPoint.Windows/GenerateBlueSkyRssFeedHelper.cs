@@ -106,11 +106,17 @@ namespace PostToPoint.Windows
                     // Upload to OneDrive and get a sharable file link for direct download
                     // TODO Replace with the correct CommandLine Args --> UI --> Function Call
                     OneDriveUploader uploader = new OneDriveUploader(App.Options.OneDriveApplicationClientId,
-                        App.Options.OneDriveDirectoryTenantId,
-                        App.Options.OneDriveClientSecretValue);
+                        App.Options.OneDriveDriveId,
+                        App.Options.OneDriveFolderId);
                     var (shareLink, fileId) = await uploader.UploadLargeFileAndGetShareLink(shortVideoFilename);
 
+
+                    
                     // Add link to Bluesky post in the RSS feed
+                    item.Links.Add(new SyndicationLink(new Uri(shareLink), "related", "video", GetMimeType(shortVideoFilename), new FileInfo(shortVideoFilename).Length));
+
+                    File.Delete(videoFilename);
+                    File.Delete(shortVideoFilename);
                 }
 
                 // Just for this once ;)
@@ -293,7 +299,7 @@ namespace PostToPoint.Windows
         {
             var provider = new FileExtensionContentTypeProvider();
 
-            string contentType; ;
+            string contentType; 
             provider.TryGetContentType(itemUri, out contentType);
 
             return contentType ?? "application/octet-stream";
