@@ -22,7 +22,7 @@ namespace PostToPoint.Windows
         {
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
-            DateTime oldestPostAccepted = DateTime.Now.AddDays(-1);
+            DateTime oldestPostAccepted = DateTime.Now.AddDays(-7);
             string timeQuery = "week"; // one of hour, day, week, month, year, all
             string sortQuery = "new"; // one of hot, new, top, rising, controversial
 
@@ -333,18 +333,51 @@ namespace PostToPoint.Windows
             using JsonDocument document = JsonDocument.Parse(jsonString);
             JsonElement root = document.RootElement;
 
-            string fallbackUrl = root[0]
-                .GetProperty("data")
-                .GetProperty("children")[0]
-                .GetProperty("data")
-                .GetProperty("secure_media")
-                .GetProperty("reddit_video")
-                .GetProperty("fallback_url")
-                .GetString();
+            string fallbackUrl = null;
 
-            fallbackUrl = fallbackUrl.Substring(0, fallbackUrl.IndexOf("?"));
+            // Find the starting position after "fallback_url\": \""
+            int startIndex = jsonString.IndexOf("fallback_url") + "fallback_url\": \"".Length;
 
-            return fallbackUrl;
+            // Find the closing quote
+            int endIndex = jsonString.IndexOf("\"", startIndex);
+
+            // Extract the URL
+            string url = jsonString.Substring(startIndex, endIndex - startIndex);
+
+            url = url.Substring(0, url.IndexOf("?"));
+
+            return url;
+
+            //jsonString
+
+            ////foreach(var child in root.EnumerateArray())
+            ////{
+            ////    fallbackUrl = JsonPathHelper.FindFirstValidPath(child, new JsonPathElement[]
+            ////    {
+            ////        new JsonPathElement("data"),
+            ////        new JsonPathElement("children", true),
+            ////        new JsonPathElement("data"),
+            ////        new JsonPathElement("secure_media"),
+            ////        new JsonPathElement("reddit_video"),
+            ////        new JsonPathElement("fallback_url")
+            ////    });
+
+            ////    if (fallbackUrl != null)
+            ////        break;
+            ////}
+
+            ////string fallbackUrl = root[0]
+            ////    .GetProperty("data")
+            ////    .GetProperty("children")[0]
+            ////    .GetProperty("data")
+            ////    .GetProperty("secure_media")
+            ////    .GetProperty("reddit_video")
+            ////    .GetProperty("fallback_url")
+            ////    .GetString();
+
+            //fallbackUrl = fallbackUrl.Substring(0, fallbackUrl.IndexOf("?"));
+
+            //return fallbackUrl;
         }
     }
 }

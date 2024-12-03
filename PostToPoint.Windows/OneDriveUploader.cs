@@ -151,8 +151,34 @@ namespace PostToPoint.Windows
                             // Final chunk, parse the response to get the file details
                             var responseContent = await response.Content.ReadAsStringAsync();
                             var jsonResponse = JObject.Parse(responseContent);
-                            var shareLink = jsonResponse["webUrl"].ToString();
+                            var webUrl = jsonResponse["webUrl"].ToString();
                             string fileId = jsonResponse["id"].ToString();
+
+                            // Create sharing link with direct download
+                            string createLinkUrl = $"https://graph.microsoft.com/v1.0/drives/{DriveId}/items/{fileId}/createLink";
+                            var linkRequestBody = new
+                            {
+                                type = "view",
+                                scope = "anonymous"
+                            };
+
+                            var linkRequest = new HttpRequestMessage(HttpMethod.Post, createLinkUrl)
+                            {
+                                Content = new StringContent(
+                                    JsonConvert.SerializeObject(linkRequestBody),
+                                    Encoding.UTF8,
+                                    "application/json"
+                                )
+                            };
+
+                            var linkResponse = await _httpClient.SendAsync(linkRequest);
+                            var linkResponseContent = await linkResponse.Content.ReadAsStringAsync();
+                            var linkJsonResponse = JObject.Parse(linkResponseContent);
+
+                            // Get the sharing URL and transform it to direct download
+                            var shareLink = linkJsonResponse["link"]["webUrl"].ToString();
+                            shareLink = shareLink.Replace("1drv.ms/v/s!", "1drv.ms/u/s!"); // Change /v/ to /u/
+
                             Console.WriteLine($"File uploaded successfully. File ID: {fileId}");
 
                             return (shareLink, fileId);

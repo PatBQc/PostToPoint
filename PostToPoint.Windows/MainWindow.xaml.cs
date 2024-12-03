@@ -360,7 +360,7 @@ namespace PostToPoint.Windows
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}",
+                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);

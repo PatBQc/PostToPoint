@@ -40,6 +40,9 @@ namespace PostToPoint.Windows
             // Get upvoted and saved posts from Reddit using RedditHelper class in this project
             var redditPosts = await RedditHelper.GetMyImportantRedditPosts(appId, redirectUri, appSecret, username, password, downloadImages);
 
+            // Order them from older to newer
+            redditPosts = redditPosts.OrderBy(x => x.Created).ToList();
+
             // We will ground our request with context from the mission, the blog posts and the Reddit posts
             List<LlmUserAgentMessagePair> previousMessages = new List<LlmUserAgentMessagePair>();
 
@@ -60,14 +63,33 @@ namespace PostToPoint.Windows
             {
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
-
                 // Append the Reddit posts to the conversation
                 AppendRedditPostMessages(previousMessages, redditPost);
 
-
                 // We will prompt the LLM to convert the reddit posts to Blue Sky posts
-                //var description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
-                var description = "This is a test description";
+                var retry = 10;
+                string description = null;
+                while (retry-- > 0 && description == null)
+                {
+                    try
+                    {
+                        description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("Error calling Anthropic: " + e.Message);
+
+                        // Just for this once ;)
+                        await Task.Delay(30000);
+                    }
+                }
+
+                if(retry <= 0)
+                {
+                    throw new Exception("Failed to get a response from LLM");
+                }
+
+                //var description = "This is a test description";
 
                 description = CleanupText(description);
 
@@ -82,7 +104,7 @@ namespace PostToPoint.Windows
                     description = description.Substring(0, 300 - uriLength - 1);
                 }
 
-                var item = new SyndicationItem(redditPost.Title, description, new Uri(shortUri), redditPost.Post.Id, new DateTimeOffset(redditPost.Created.ToUniversalTime(), TimeSpan.Zero));
+                var item = new SyndicationItem(redditPost.Title, description, new Uri(shortUri), "reddit-" + redditPost.Post.Id, new DateTimeOffset(redditPost.Created.ToUniversalTime(), TimeSpan.Zero));
                 item.PublishDate = redditPost.Created;
 
                 var itemUri = redditPost.GetUri();
@@ -105,23 +127,21 @@ namespace PostToPoint.Windows
 
                     // Upload to OneDrive and get a sharable file link for direct download
                     // TODO Replace with the correct CommandLine Args --> UI --> Function Call
-                    OneDriveUploader uploader = new OneDriveUploader(App.Options.OneDriveApplicationClientId,
-                        App.Options.OneDriveDriveId,
-                        App.Options.OneDriveFolderId);
-                    var (shareLink, fileId) = await uploader.UploadLargeFileAndGetShareLink(shortVideoFilename);
+                    //OneDriveUploader uploader = new OneDriveUploader(App.Options.OneDriveApplicationClientId,
+                    //    App.Options.OneDriveDriveId,
+                    //    App.Options.OneDriveFolderId);
+                    //var (shareLink, fileId) = await uploader.UploadLargeFileAndGetShareLink(shortVideoFilename);
 
+                    var shareLink = GoogleDriveUploader.UploadAndShareFile(shortVideoFilename,
+                        "1VIuGmlZ_yd_e0FofoBLvuyf_vtT6PBdl",
+                        @".\configs\pointtopost-566f8e782ab7.json.secret");
 
-                    
                     // Add link to Bluesky post in the RSS feed
                     item.Links.Add(new SyndicationLink(new Uri(shareLink), "related", "video", GetMimeType(shortVideoFilename), new FileInfo(shortVideoFilename).Length));
 
                     File.Delete(videoFilename);
                     File.Delete(shortVideoFilename);
                 }
-
-                // Just for this once ;)
-                // await Task.Delay(20000);
-
 
                 rssItems.Add(item);
             }
@@ -299,7 +319,7 @@ namespace PostToPoint.Windows
         {
             var provider = new FileExtensionContentTypeProvider();
 
-            string contentType; 
+            string contentType;
             provider.TryGetContentType(itemUri, out contentType);
 
             return contentType ?? "application/octet-stream";
