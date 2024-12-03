@@ -28,7 +28,6 @@ namespace PostToPoint.Windows
         public OneDriveUploader(string clientId, string tenantId, string clientSecret)
         {
             ClientId = clientId;
-            //TenantId = tenantId;
             TenantId = "common";
             ClientSecret = clientSecret;
         }
@@ -113,7 +112,8 @@ namespace PostToPoint.Windows
             {
                 var errorContent = await sessionResponse.Content.ReadAsStringAsync();
                 Console.WriteLine($"Error creating upload session: {errorContent}");
-                // Handle the error appropriately
+
+                throw new HttpProtocolException((long)sessionResponse.StatusCode, "Error creating upload session", null);
             }
             else
             {
@@ -144,7 +144,7 @@ namespace PostToPoint.Windows
                         if (!response.IsSuccessStatusCode)
                         {
                             // Handle error
-                            break;
+                            throw new HttpProtocolException((long)response.StatusCode, "Error in upload session on a file chunk", null);
                         }
 
                         if (i + currentChunkSize >= fileSize)
@@ -157,82 +157,12 @@ namespace PostToPoint.Windows
                             Console.WriteLine($"File uploaded successfully. File ID: {fileId}");
 
                             return (shareLink, fileId);
-
-                            //        var finalResponse = await response.Content.ReadAsStringAsync();
-                            //        var finalData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(finalResponse);
-
-                            //        var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
-
-                            //        // Convert the sharing link to a direct download link
-                            //        shareLink = shareLink.Replace("?web=1", "?download=1");
-
-                            //        var fileId = finalData.RootElement.GetProperty("id").GetString();
-
-                            //        return (shareLink, fileId);
-
                         }
                     }
                 }
             }
 
             throw new Exception("Failed to complete file upload");
-
-            // old
-            // Add the required JSON body
-            //var sessionRequestBody = "{\"@microsoft.graph.conflictBehavior\": \"rename\",\"name\": \"" + fileName + "\"}";
-            //var content = new StringContent(sessionRequestBody, Encoding.UTF8, "application/json");
-
-            //var sessionResponse = await _httpClient.PostAsync(createSessionUrl, content);
-
-            //if (!sessionResponse.IsSuccessStatusCode)
-            //{
-            //    var errorContent = await sessionResponse.Content.ReadAsStringAsync();
-            //    throw new Exception($"Failed to create upload session. Status: {sessionResponse.StatusCode}, Error: {errorContent}");
-            //}
-
-            //var sessionJsonResponse = await sessionResponse.Content.ReadAsStringAsync();
-            //var sessionData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(sessionJsonResponse);
-            //var uploadUrl = sessionData.RootElement.GetProperty("uploadUrl").GetString();
-
-            //// Rest of the code remains the same...
-            //// 2. Upload the file in chunks
-            //const int chunkSize = 320 * 1024; // 320 KB chunks
-            //var totalLength = fileContent.Length;
-
-            //for (var i = 0; i < totalLength; i += chunkSize)
-            //{
-            //    var chunk = new byte[Math.Min(chunkSize, totalLength - i)];
-            //    Array.Copy(fileContent, i, chunk, 0, chunk.Length);
-
-            //    using var request = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
-            //    request.Content = new ByteArrayContent(chunk);
-            //    request.Content.Headers.ContentRange = new ContentRangeHeaderValue(i, i + chunk.Length - 1, totalLength);
-            //    request.Content.Headers.ContentLength = chunk.Length;
-
-            //    var response = await _httpClient.SendAsync(request);
-
-            //    if (!response.IsSuccessStatusCode)
-            //    {
-            //        throw new Exception($"Failed to upload chunk: {await response.Content.ReadAsStringAsync()}");
-            //    }
-
-            //    if (i + chunk.Length >= totalLength)
-            //    {
-            //        var finalResponse = await response.Content.ReadAsStringAsync();
-            //        var finalData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(finalResponse);
-
-            //        var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
-
-            //        // Convert the sharing link to a direct download link
-            //        shareLink = shareLink.Replace("?web=1", "?download=1");
-
-            //        var fileId = finalData.RootElement.GetProperty("id").GetString();
-
-            //        return (shareLink, fileId);
-            //    }
-            //}
-
-            //throw new Exception("Failed to complete file upload");
         }
     }
 
