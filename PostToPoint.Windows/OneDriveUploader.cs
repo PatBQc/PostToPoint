@@ -1,41 +1,26 @@
-﻿using System.IO;
+﻿using Azure.Core;
+using Microsoft.Identity.Client;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
 namespace PostToPoint.Windows
 {
-
-    // Example usage:
-    // public class Program
-    // {
-    //     public static async Task Main(string[] args)
-    //     {
-    //         try
-    //         {
-    //             var uploader = new OneDriveUploader();
-    //             await uploader.Initialize();
-    // 
-    //             string filePath = @"C:\Path\To\Your\Video.mp4";
-    //             string oneDriveFolderPath = "/FolderName"; // Specify your OneDrive folder path
-    // 
-    //             string downloadUrl = await uploader.UploadVideoAndGetShareableLink(filePath, oneDriveFolderPath);
-    //             Console.WriteLine($"Direct download link: {downloadUrl}");
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             Console.WriteLine($"Error: {ex.Message}");
-    //         }
-    //     }
-    // }
-
     public class OneDriveUploader
     {
         // Replace these values with your own Azure AD application details
         private readonly string ClientId;
         private readonly string TenantId;
         private readonly string ClientSecret;
+        private readonly string DriveId = "";
+        private readonly string FolderId = "";
+
+        private readonly List<string> scopes = new List<string> { "Files.ReadWrite.All", "offline_access" };
 
         private HttpClient _httpClient = null;
 
@@ -43,7 +28,8 @@ namespace PostToPoint.Windows
         public OneDriveUploader(string clientId, string tenantId, string clientSecret)
         {
             ClientId = clientId;
-            TenantId = tenantId;
+            //TenantId = tenantId;
+            TenantId = "common";
             ClientSecret = clientSecret;
         }
 
@@ -54,116 +40,57 @@ namespace PostToPoint.Windows
             {
                 _httpClient = new HttpClient();
 
-                var tokenEndpoint = $"https://login.microsoftonline.com/{TenantId}/oauth2/v2.0/token";
-                var content = new FormUrlEncodedContent(new Dictionary<string, string>
-                {
-                    {"client_id", ClientId},
-                    {"scope", "https://graph.microsoft.com/.default"},
-                    {"client_secret", ClientSecret},
-                    {"grant_type", "client_credentials"}
-                });
+                string accessToken = null;
 
-                var response = await _httpClient.PostAsync(tokenEndpoint, content);
-                var jsonResponse = await response.Content.ReadAsStringAsync();
-                var tokenData = JsonSerializer.Deserialize<JsonDocument>(jsonResponse);
-                var accessToken = tokenData.RootElement.GetProperty("access_token").GetString();
+                try
+                {
+                    // Initialize MSAL
+                    var app = PublicClientApplicationBuilder
+                        .Create(ClientId)
+                        .WithRedirectUri("http://localhost")
+                        .WithAuthority($"https://login.microsoftonline.com/{TenantId}")
+                        .Build();
+
+                    // Enable token cache serialization
+                    await OneDriveAccessTokenCacheHelper.EnableSerialization(app);
+
+                    // Try to get token silently first (from cache)
+                    var accounts = await app.GetAccountsAsync();
+                    var account = accounts.FirstOrDefault();
+
+                    if (account == null)
+                    {
+                        // No cached account found, acquire token interactively
+                        var result = await app.AcquireTokenInteractive(scopes)
+                            .ExecuteAsync();
+                        accessToken = result.AccessToken;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var result = await app.AcquireTokenSilent(scopes, account)
+                                .ExecuteAsync();
+                            accessToken = result.AccessToken;
+                        }
+                        catch (MsalUiRequiredException)
+                        {
+                            // Token expired and refresh token is invalid, acquire new token interactively
+                            var result = await app.AcquireTokenInteractive(scopes)
+                                .ExecuteAsync();
+                            accessToken = result.AccessToken;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle any other exceptions
+                    Console.WriteLine($"Error acquiring token: {ex.Message}");
+                    throw;
+                }
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             }
-        }
-
-        public async Task<(string shareLink, string uploadedFileId)> UploadFileAndGetShareLink(string filePath)
-        {
-            await InitializeClientWithAccessToken();
-
-            // 1. Upload the file
-            var fileName = Path.GetFileName(filePath);
-            var fileContent = File.ReadAllBytes(filePath);
-
-            // Small file upload (less than 4MB)
-            var uploadUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{fileName}:/content";
-            var fileContentByteArrayContent = new ByteArrayContent(fileContent);
-            fileContentByteArrayContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-
-            var uploadResponse = await _httpClient.PutAsync(uploadUrl, fileContentByteArrayContent);
-            var uploadJsonResponse = await uploadResponse.Content.ReadAsStringAsync();
-            var uploadData = JsonSerializer.Deserialize<JsonDocument>(uploadJsonResponse);
-            var fileId = uploadData.RootElement.GetProperty("id").GetString();
-
-            // 2. Create sharing link
-            var sharingUrl = $"https://graph.microsoft.com/v1.0/me/drive/items/{fileId}/createLink";
-            var sharingContent = new StringContent(
-                JsonSerializer.Serialize(new
-                {
-                    type = "view",
-                    scope = "anonymous"
-                }),
-                Encoding.UTF8, new MediaTypeHeaderValue("application/json")
-            );
-
-            var sharingResponse = await _httpClient.PostAsync(sharingUrl, sharingContent);
-            var sharingJsonResponse = await sharingResponse.Content.ReadAsStringAsync();
-            var sharingData = JsonSerializer.Deserialize<JsonDocument>(sharingJsonResponse);
-            var shareLink = sharingData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
-
-            // Convert the sharing link to a direct download link
-            shareLink = shareLink.Replace("?web=1", "?download=1");
-
-            return (shareLink, fileId);
-        }
-
-        // For large files (>4MB), use upload session
-        public async Task<(string shareLink, string uploadedFileId)> UploadLargeFileAndGetShareLink_old(string filePath)
-        {
-
-            var fileName = Path.GetFileName(filePath);
-            var fileContent = File.ReadAllBytes(filePath);
-
-            // 1. Create upload session
-            var createSessionUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{fileName}:/createUploadSession";
-            var sessionResponse = await _httpClient.PostAsync(createSessionUrl, null);
-            var sessionJsonResponse = await sessionResponse.Content.ReadAsStringAsync();
-            var sessionData = JsonSerializer.Deserialize<JsonDocument>(sessionJsonResponse);
-            var uploadUrl = sessionData.RootElement.GetProperty("uploadUrl").GetString();
-
-            // 2. Upload the file in chunks
-            const int chunkSize = 320 * 1024; // 320 KB chunks
-            var totalLength = fileContent.Length;
-
-            for (var i = 0; i < totalLength; i += chunkSize)
-            {
-                var chunk = new byte[Math.Min(chunkSize, totalLength - i)];
-                Array.Copy(fileContent, i, chunk, 0, chunk.Length);
-
-                using var request = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
-                request.Content = new ByteArrayContent(chunk);
-                request.Content.Headers.ContentRange = new ContentRangeHeaderValue(i, i + chunk.Length - 1, totalLength);
-                request.Content.Headers.ContentLength = chunk.Length;
-
-                var response = await _httpClient.SendAsync(request);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception($"Failed to upload chunk: {await response.Content.ReadAsStringAsync()}");
-                }
-
-                if (i + chunk.Length >= totalLength)
-                {
-                    var finalResponse = await response.Content.ReadAsStringAsync();
-                    var finalData = JsonSerializer.Deserialize<JsonDocument>(finalResponse);
-
-                    var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
-
-                    // Convert the sharing link to a direct download link
-                    shareLink = shareLink.Replace("?web=1", "?download=1");
-
-                    var fileId = finalData.RootElement.GetProperty("id").GetString();
-
-                    return (shareLink, fileId);
-                }
-            }
-
-            throw new Exception("Failed to complete file upload");
         }
 
         public async Task<(string shareLink, string uploadedFileId)> UploadLargeFileAndGetShareLink(string filePath)
@@ -173,83 +100,139 @@ namespace PostToPoint.Windows
             var fileName = Path.GetFileName(filePath);
             var fileContent = File.ReadAllBytes(filePath);
 
-            // Before: find the Share folder
-            var folderPath = "Partage/rss"; // or any folder name
-            var folderUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{folderPath}";
-            var folderResponse = await _httpClient.GetAsync(folderUrl);
-            var jsonResponse = await folderResponse.Content.ReadAsStringAsync();
-            var data = JsonSerializer.Deserialize<JsonDocument>(jsonResponse);
-            var folderId = data.RootElement.GetProperty("id").GetString();
-
             // 1. Create upload session
-            //var createSessionUrl = $"https://graph.microsoft.com/v1.0/me/drive/root:/{fileName}:/createUploadSession";
-            var createSessionUrl = $"https://graph.microsoft.com/v1.0/me/drive/items/folder_id:/children/{fileName}:/createUploadSession";
+            string createSessionUrl = $"https://graph.microsoft.com/v1.0/drives/{DriveId}/items/{FolderId}:/{fileName}:/createUploadSession";
 
-            // Add the required JSON body
-            var sessionRequestBody = new StringContent(
-                JsonSerializer.Serialize(new
-                {
-                    item = new
-                    {
-                        conflictBehavior = "rename",
-                        name = fileName
-                    }
-                }),
-                Encoding.UTF8,
-                "application/json"
-            );
+            string uploadUrl = null;
 
-            var sessionResponse = await _httpClient.PostAsync(createSessionUrl, sessionRequestBody);
+            var jsonContent = "{\"@microsoft.graph.conflictBehavior\": \"rename\",\"name\": \"" + fileName + "\"}";
+            var sessionContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            var sessionResponse = await _httpClient.PostAsync(createSessionUrl, sessionContent);
 
             if (!sessionResponse.IsSuccessStatusCode)
             {
                 var errorContent = await sessionResponse.Content.ReadAsStringAsync();
-                throw new Exception($"Failed to create upload session. Status: {sessionResponse.StatusCode}, Error: {errorContent}");
+                Console.WriteLine($"Error creating upload session: {errorContent}");
+                // Handle the error appropriately
+            }
+            else
+            {
+                var responseContent = await sessionResponse.Content.ReadAsStringAsync();
+                var jsonResponse = JObject.Parse(responseContent);
+                uploadUrl = jsonResponse["uploadUrl"].ToString();
+                // Proceed with the file upload using the uploadUrl
             }
 
-            var sessionJsonResponse = await sessionResponse.Content.ReadAsStringAsync();
-            var sessionData = JsonSerializer.Deserialize<JsonDocument>(sessionJsonResponse);
-            var uploadUrl = sessionData.RootElement.GetProperty("uploadUrl").GetString();
-
-            // Rest of the code remains the same...
-            // 2. Upload the file in chunks
             const int chunkSize = 320 * 1024; // 320 KB chunks
-            var totalLength = fileContent.Length;
+            long fileSize = new FileInfo(filePath).Length;
 
-            for (var i = 0; i < totalLength; i += chunkSize)
+            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (var httpClient = new HttpClient())
             {
-                var chunk = new byte[Math.Min(chunkSize, totalLength - i)];
-                Array.Copy(fileContent, i, chunk, 0, chunk.Length);
-
-                using var request = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
-                request.Content = new ByteArrayContent(chunk);
-                request.Content.Headers.ContentRange = new ContentRangeHeaderValue(i, i + chunk.Length - 1, totalLength);
-                request.Content.Headers.ContentLength = chunk.Length;
-
-                var response = await _httpClient.SendAsync(request);
-
-                if (!response.IsSuccessStatusCode)
+                for (long i = 0; i < fileSize; i += chunkSize)
                 {
-                    throw new Exception($"Failed to upload chunk: {await response.Content.ReadAsStringAsync()}");
-                }
+                    int currentChunkSize = (int)Math.Min(chunkSize, fileSize - i);
+                    byte[] buffer = new byte[currentChunkSize];
+                    await fileStream.ReadAsync(buffer, 0, currentChunkSize);
 
-                if (i + chunk.Length >= totalLength)
-                {
-                    var finalResponse = await response.Content.ReadAsStringAsync();
-                    var finalData = JsonSerializer.Deserialize<JsonDocument>(finalResponse);
+                    using (var chunkContent = new ByteArrayContent(buffer))
+                    {
+                        chunkContent.Headers.Add("Content-Range", $"bytes {i}-{i + currentChunkSize - 1}/{fileSize}");
+                        chunkContent.Headers.Add("Content-Length", currentChunkSize.ToString());
 
-                    var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
+                        var response = await httpClient.PutAsync(uploadUrl, chunkContent);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            // Handle error
+                            break;
+                        }
 
-                    // Convert the sharing link to a direct download link
-                    shareLink = shareLink.Replace("?web=1", "?download=1");
+                        if (i + currentChunkSize >= fileSize)
+                        {
+                            // Final chunk, parse the response to get the file details
+                            var responseContent = await response.Content.ReadAsStringAsync();
+                            var jsonResponse = JObject.Parse(responseContent);
+                            var shareLink = jsonResponse["webUrl"].ToString();
+                            string fileId = jsonResponse["id"].ToString();
+                            Console.WriteLine($"File uploaded successfully. File ID: {fileId}");
 
-                    var fileId = finalData.RootElement.GetProperty("id").GetString();
+                            return (shareLink, fileId);
 
-                    return (shareLink, fileId);
+                            //        var finalResponse = await response.Content.ReadAsStringAsync();
+                            //        var finalData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(finalResponse);
+
+                            //        var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
+
+                            //        // Convert the sharing link to a direct download link
+                            //        shareLink = shareLink.Replace("?web=1", "?download=1");
+
+                            //        var fileId = finalData.RootElement.GetProperty("id").GetString();
+
+                            //        return (shareLink, fileId);
+
+                        }
+                    }
                 }
             }
 
             throw new Exception("Failed to complete file upload");
+
+            // old
+            // Add the required JSON body
+            //var sessionRequestBody = "{\"@microsoft.graph.conflictBehavior\": \"rename\",\"name\": \"" + fileName + "\"}";
+            //var content = new StringContent(sessionRequestBody, Encoding.UTF8, "application/json");
+
+            //var sessionResponse = await _httpClient.PostAsync(createSessionUrl, content);
+
+            //if (!sessionResponse.IsSuccessStatusCode)
+            //{
+            //    var errorContent = await sessionResponse.Content.ReadAsStringAsync();
+            //    throw new Exception($"Failed to create upload session. Status: {sessionResponse.StatusCode}, Error: {errorContent}");
+            //}
+
+            //var sessionJsonResponse = await sessionResponse.Content.ReadAsStringAsync();
+            //var sessionData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(sessionJsonResponse);
+            //var uploadUrl = sessionData.RootElement.GetProperty("uploadUrl").GetString();
+
+            //// Rest of the code remains the same...
+            //// 2. Upload the file in chunks
+            //const int chunkSize = 320 * 1024; // 320 KB chunks
+            //var totalLength = fileContent.Length;
+
+            //for (var i = 0; i < totalLength; i += chunkSize)
+            //{
+            //    var chunk = new byte[Math.Min(chunkSize, totalLength - i)];
+            //    Array.Copy(fileContent, i, chunk, 0, chunk.Length);
+
+            //    using var request = new HttpRequestMessage(HttpMethod.Put, uploadUrl);
+            //    request.Content = new ByteArrayContent(chunk);
+            //    request.Content.Headers.ContentRange = new ContentRangeHeaderValue(i, i + chunk.Length - 1, totalLength);
+            //    request.Content.Headers.ContentLength = chunk.Length;
+
+            //    var response = await _httpClient.SendAsync(request);
+
+            //    if (!response.IsSuccessStatusCode)
+            //    {
+            //        throw new Exception($"Failed to upload chunk: {await response.Content.ReadAsStringAsync()}");
+            //    }
+
+            //    if (i + chunk.Length >= totalLength)
+            //    {
+            //        var finalResponse = await response.Content.ReadAsStringAsync();
+            //        var finalData = Newtonsoft.Json.JsonSerializer.Deserialize<JsonDocument>(finalResponse);
+
+            //        var shareLink = finalData.RootElement.GetProperty("link").GetProperty("webUrl").GetString();
+
+            //        // Convert the sharing link to a direct download link
+            //        shareLink = shareLink.Replace("?web=1", "?download=1");
+
+            //        var fileId = finalData.RootElement.GetProperty("id").GetString();
+
+            //        return (shareLink, fileId);
+            //    }
+            //}
+
+            //throw new Exception("Failed to complete file upload");
         }
     }
 
