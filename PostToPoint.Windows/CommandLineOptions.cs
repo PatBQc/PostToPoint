@@ -69,5 +69,10 @@ namespace PostToPoint.Windows
         [Option("zapier-bluesky-webhook-uri", Required = false, HelpText = "Your Zapier Bluesky webhook URI")]
         public string ZapierBlueSkyWebHookUri { get; set; }
 
+        
+        [Option("sql-lite-db", Required = false, HelpText = "The SQLite database file")]
+        public string SqlLiteDatabaseFilename { get; set; }
+
+
     }
 }

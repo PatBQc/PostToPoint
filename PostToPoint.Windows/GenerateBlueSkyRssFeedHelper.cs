@@ -64,6 +64,12 @@ namespace PostToPoint.Windows
             {
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
+                if(SqliteHelper.DoesPostExistInBluesky(redditPost))
+                {
+                    Debug.WriteLine("Already posted about this Reddit post, skipping");
+                    continue;
+                }
+
                 // Append the Reddit posts to the conversation
                 AppendRedditPostMessages(previousMessages, redditPost);
 
@@ -160,6 +166,8 @@ namespace PostToPoint.Windows
                             imageUri,
                             videoUri
                         );
+
+                SqliteHelper.AppendRedditPostToBluesky(redditPost, description, shortUri, imageUri, videoUri);
 
                 if (success)
                 {

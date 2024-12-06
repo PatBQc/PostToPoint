@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PostToPoint.Windows
 {
-    class RedditPostData
+    public class RedditPostData
     {
         public string Title { get; set; }
         public string Url { get; set; }
