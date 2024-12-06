@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.StaticFiles;
+using Reddit.Things;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -109,10 +110,15 @@ namespace PostToPoint.Windows
 
                 var itemUri = redditPost.GetUri();
 
+                string imageUri = string.Empty;
+
                 if (itemUri.Contains("/i.redd.it/"))
                 {
+                    imageUri = itemUri;
                     item.Links.Add(new SyndicationLink(new Uri(itemUri), "related", "image", GetMimeType(itemUri), await GetLength(itemUri)));
                 }
+
+                string videoUri = string.Empty;
 
                 if (itemUri.Contains("/v.redd.it/"))
                 {
@@ -136,6 +142,8 @@ namespace PostToPoint.Windows
                         "1VIuGmlZ_yd_e0FofoBLvuyf_vtT6PBdl",
                         @".\configs\pointtopost-566f8e782ab7.json.secret");
 
+                    videoUri = shareLink;
+
                     // Add link to Bluesky post in the RSS feed
                     item.Links.Add(new SyndicationLink(new Uri(shareLink), "related", "video", GetMimeType(shortVideoFilename), new FileInfo(shortVideoFilename).Length));
 
@@ -144,7 +152,29 @@ namespace PostToPoint.Windows
                 }
 
                 rssItems.Add(item);
+
+                using var webhook = new ZapierWebhook(App.Options.ZapierBlueSkyWebHookUri);
+                bool success = await webhook.SendToWebhook(
+                            description,
+                            shortUri,
+                            imageUri,
+                            videoUri
+                        );
+
+                if (success)
+                {
+                    Console.WriteLine("Successfully sent to Zapier webhook");
+                }
+                else
+                {
+                    Console.WriteLine("Failed to send to webhook");
+                }
             }
+
+
+
+
+
 
             // Create a new SyndicationFeed
             // TODO change the id URI to something from the configs

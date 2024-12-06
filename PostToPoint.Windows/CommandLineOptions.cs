@@ -66,5 +66,8 @@ namespace PostToPoint.Windows
         [Option("onedrive-folder-id", Required = false, HelpText = "Your OneDrive folder id in the same drive as specified in drive id")]
         public string OneDriveFolderId { get; set; }
 
+        [Option("zapier-bluesky-webhook-uri", Required = false, HelpText = "Your Zapier Bluesky webhook URI")]
+        public string ZapierBlueSkyWebHookUri { get; set; }
+
     }
 }
