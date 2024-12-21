@@ -29,7 +29,7 @@ namespace PostToPoint.Windows
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(GetMetadata());
 
-            if(!string.IsNullOrEmpty(SelfText))
+            if (!string.IsNullOrEmpty(SelfText))
             {
                 sb.AppendLine(SelfText);
             }
@@ -59,6 +59,26 @@ namespace PostToPoint.Windows
             return sb.ToString();
         }
 
+        public bool UrlIsImage
+        {
+            get
+            {
+                if (Url == null)
+                {
+                    return false;
+                }
+
+                string urlClean = Url.ToLower().Trim();
+
+                return urlClean.EndsWith(".png")  || urlClean.EndsWith(".jpg") || urlClean.EndsWith(".jpeg") || urlClean.EndsWith(".gif") || urlClean.EndsWith(".webp");
+            }
+        }
+
+        public string MarkdownImageLink
+        {
+            get { return "![Image de " + Title + "](" + Url + ")"; }
+        }
+
         private static void AppendComment(StringBuilder sb, Comment comment, int depth, int maxDepth, int commentCount, int maxComments)
         {
             if (maxDepth != -1 && depth > maxDepth) return;
@@ -75,7 +95,7 @@ namespace PostToPoint.Windows
             {
                 foreach (var reply in comment.Replies)
                 {
-                    AppendComment(sb, reply, depth + 1, maxDepth, commentCount+1, maxComments);
+                    AppendComment(sb, reply, depth + 1, maxDepth, commentCount + 1, maxComments);
                 }
             }
         }

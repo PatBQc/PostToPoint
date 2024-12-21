@@ -261,22 +261,44 @@
 
                 <GroupBox Header="Actions" Margin="10">
                     <StackPanel Margin="10">
-                        <Button Name="btnGenerateBlueskyRss" 
+                        <StackPanel Orientation="Horizontal">
+                            <Button Name="btnGenerateBlueskyRss" 
                 Content="Generate Bluesky RSS Feed from Reddit" 
                 Padding="10,5"
+                Margin="5,0"
                 Height="30"
                 HorizontalAlignment="Left"
                 Click="btnGenerateBlueskyRss_Click">
-                            <Button.Style>
-                                <Style TargetType="Button">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsProcessing}" Value="True">
-                                            <Setter Property="IsEnabled" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                        </Button>
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsProcessing}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                            <Button Name="btnGenerateContentRssPage" 
+                Content="Generate Content for RSS Feed from Disk Redirects" 
+                Padding="10,5"
+                Margin="5,0"
+                Height="30"
+                HorizontalAlignment="Left"
+                Click="btnGenerateContentRssPage_Click">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsProcessing}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
+                        </StackPanel>
 
                         <!-- Progress indicator -->
                         <ProgressBar Name="progressBar" 

@@ -1,8 +1,10 @@
-﻿using PuppeteerSharp;
+﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
+using PuppeteerSharp;
 using Reddit;
 using Reddit.Controllers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -18,13 +20,23 @@ namespace PostToPoint.Windows
     {
         private static string _accessToken = null;
 
-        public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(string appId, string redirectUri, string appSecret, string username, string password, bool downloadImages)
+
+        public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(
+            string appId, 
+            string redirectUri, 
+            string appSecret, 
+            string username, 
+            string password, 
+            bool downloadImages, 
+            string timeQuery= "week", 
+            string sortQuery = "new",
+            int oldestDaysInThePast = 7)
         {
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
-            DateTime oldestPostAccepted = DateTime.Now.AddDays(-7);
-            string timeQuery = "week"; // one of hour, day, week, month, year, all
-            string sortQuery = "new"; // one of hot, new, top, rising, controversial
+            DateTime oldestPostAccepted = DateTime.Now.AddDays(-oldestDaysInThePast);
+            //string timeQuery = "week"; // one of hour, day, week, month, year, all
+            //string sortQuery = "new"; // one of hot, new, top, rising, controversial
 
             var authenticator = new RedditAuthenticator(appId, appSecret, username, password, "PostToPoint", redirectUri);
 
@@ -39,11 +51,10 @@ namespace PostToPoint.Windows
             }
 
             // Initialize Reddit client
-            var reddit = new RedditClient(appId: appId, appSecret: appSecret, accessToken: _accessToken); 
+            var reddit = new RedditClient(appId: appId, appSecret: appSecret, accessToken: _accessToken);
 
-            // Get saved posts (change to GetUpvoted for liked posts)
-            var savedPosts = reddit.Account.Me.GetPostHistory(where: "saved", context: 3, t: timeQuery, limit: 100, sort: sortQuery);
-            var upvotedPosts = reddit.Account.Me.GetPostHistory(where: "upvoted", context: 3, t: timeQuery, limit: 100, sort: sortQuery);
+            var savedPosts = GetRedditPosts("saved", timeQuery, sortQuery, reddit);
+            var upvotedPosts = GetRedditPosts("upvoted", timeQuery, sortQuery, reddit);
 
             List<Post> posts = new List<Post>(savedPosts);
             posts.AddRange(upvotedPosts);
@@ -51,7 +62,8 @@ namespace PostToPoint.Windows
             var redditImportantPosts = new List<Post>(
                 posts.Where(x => x.Created > oldestPostAccepted)
                      .DistinctBy(x => x.Permalink)
-                     .DistinctBy(x => GetPostImportantPart(x))
+                     //.DistinctBy(x => GetPostImportantPart(x))
+                     .DistinctBy(x => x.Title)
                      );
 
             var postDataList = new List<RedditPostData>();
@@ -89,6 +101,29 @@ namespace PostToPoint.Windows
             }
 
             return postDataList;
+        }
+
+        private static List<Post> GetRedditPosts(string whereQuery, string timeQuery, string sortQuery, RedditClient reddit)
+        {
+            var continuationPostList = new List<Post>();
+            string after = null;
+
+            // Get saved posts (change to GetUpvoted for liked posts)
+            do
+            {
+                // Retrieve a batch of posts
+                var subPostList = reddit.Account.Me.GetPostHistory(where: whereQuery, context: 3, t: timeQuery, limit: 100, sort: sortQuery, after: after);
+
+                // Add the retrieved posts to the collection
+                continuationPostList.AddRange(subPostList);
+
+                // Get the "after" value for the next batch
+                after = subPostList.Count > 0 ? subPostList[subPostList.Count - 1].Fullname : null;
+
+                // Continue until we've retrieved all posts or reached a desired limit
+            } while (after != null && continuationPostList.Count < 10000);
+
+            return continuationPostList;
         }
 
         private static async Task<string> DownloadAndSaveImages(string batchTag, List<RedditPostData> postDataList, string outputDir)

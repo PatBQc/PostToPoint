@@ -230,7 +230,7 @@ namespace PostToPoint.Windows
             // permalink: "/r/{slug}"
             // ref                 : "/r/{slug}"
             // sitemap: false
-            // redirect_to: { redirect}
+            // redirect_to: {redirect}
             // ---
 
             var template = File.ReadAllText(templateFilename);
@@ -246,7 +246,7 @@ namespace PostToPoint.Windows
             return shortUri;
         }
 
-        private static string CleanForMarkdownMeta(string unsafeString)
+        public static string CleanForMarkdownMeta(string unsafeString)
         {
             string unsafeChars = "\"\'\r\n<>";
 
@@ -318,7 +318,7 @@ namespace PostToPoint.Windows
                 UserMessage = """
                 You will have to create a Bluesky post.  Bluesky is a microblogging platform like Twitter.
                 I will provide example blog posts I written to get a sense of the style and angle provided in the reference blog posts for your writting.
-                I will then give you give you the Reddit Post to work from.
+                I will then give you the Reddit Post to work from.
                 You will receive my instruction after that, where you will answer only with your writing, nothing more as you know is important.
                 """,
                 AgentMessage = "Excellent, I will create a Bluesky post from a Reddit post using the style and angle provided in the reference blog posts.  I also understand that my answer for the post will only contain the post, nothing more."

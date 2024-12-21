@@ -310,6 +310,8 @@ namespace PostToPoint.Windows
             return null;
         }
 
+
+
         private async void btnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -361,6 +363,67 @@ namespace PostToPoint.Windows
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
+                              "Error",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsProcessing = false;
+            }
+        }
+
+        private async void btnGenerateContentRssPage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                IsProcessing = true;
+
+                // Validate required settings
+                if (string.IsNullOrEmpty(RedditToBlueskyPath) ||
+                    string.IsNullOrEmpty(RssDirectory) ||
+                    string.IsNullOrEmpty(RedditAppId))
+                {
+                    MessageBox.Show("Please configure all required settings before generating the RSS feed content.",
+                                  "Missing Configuration",
+                                  MessageBoxButton.OK,
+                                  MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Perform the RSS feed generation
+                await Task.Run(async () =>
+                {
+                    // TODO work to surface every parameter in the UI / CLI args
+                    await GenerateContentRssPageHelper.GenerateContentRssPage(
+                        RedditAppId,
+                        RedditRedirectUri,
+                        RedditAppSecret,
+                        RedditUsername,
+                        GetRedditPassword(),
+                        false,
+                        "Bluesky Auto Post",
+                        "RSS feed generated for Bluesky Auto Post from Reddit Upvotes and Saved posts",
+                        "https://www.patb.ca/rss/bluesky-auto-post.rss",
+                        System.IO.Path.Combine(RssDirectory, "bluesky-auto-post.xml"),
+                        BlogPostDirectory,
+                        App.Options.LlmChoice,
+                        RedditToBlueskyPath,
+                        PostContentDirectory,
+                        RedirectDirectory
+                        );
+
+
+                });
+
+                MessageBox.Show("Bluesky RSS feed content has been generated successfully!",
+                              "Success",
+                              MessageBoxButton.OK,
+                              MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while generating the RSS feed content:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
