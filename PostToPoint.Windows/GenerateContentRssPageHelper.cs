@@ -51,6 +51,12 @@ namespace PostToPoint.Windows
         {
             var md = MarkdownTemplate.ParseFromFile(file);
 
+            if(!string.IsNullOrWhiteSpace(md.Content))
+            {
+                System.Diagnostics.Debug.WriteLine($"File already has content, skipping: {file}");
+                return;
+            }
+
             // Find the original reddit post that was used to create the post
             if (!redditPostsDic.ContainsKey(md.Title))
             {
