@@ -237,6 +237,9 @@ namespace PostToPoint.Windows
             template = template.Replace("{title}", CleanForMarkdownMeta(title));
             template = template.Replace("{subheadline}", CleanForMarkdownMeta(subheadline));
             template = template.Replace("{teaser}", CleanForMarkdownMeta(teaser));
+
+            //TODO: don't know why, but sometime the permalink from reddit gets in the slug in the final .md file.
+            // a fix is written in FIX_SLUG_FROM_PERMALINK
             template = template.Replace("{slug}", $"{slug}");
             template = template.Replace("{redirect}", uri);
 

@@ -51,7 +51,16 @@ namespace PostToPoint.Windows
         {
             var md = MarkdownTemplate.ParseFromFile(file);
 
-            if(!string.IsNullOrWhiteSpace(md.Content))
+            //TODO: don't know why, but sometime the permalink from reddit gets in the slug in the final .md file.
+            // a fix is written in FIX_SLUG_FROM_PERMALINK
+            // This is the fix... if the slug is to long, assume it's not the correct one and make the correction.
+            if (md.Slug.Length > 3)
+            {
+                md.Slug = Directory.GetParent(file).Name + Path.GetFileNameWithoutExtension(file).Substring(11);
+                md.SaveToFile(file);
+            }
+
+            if (!string.IsNullOrWhiteSpace(md.Content))
             {
                 System.Diagnostics.Debug.WriteLine($"File already has content, skipping: {file}");
                 return;
