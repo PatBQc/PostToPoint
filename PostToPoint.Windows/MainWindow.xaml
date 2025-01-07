@@ -242,19 +242,18 @@
 
                             <!-- Redirect directory -->
                             <Label Grid.Row="3" Grid.Column="0" 
-                   Content="Redirects :" 
-                   VerticalAlignment="Center"/>
+                               Content="Redirects :" 
+                               VerticalAlignment="Center"/>
                             <TextBox Grid.Row="3" Grid.Column="1" 
-                     Name="txtRedirectDirectory" 
-                     Margin="0,2"
-                     IsReadOnly="True"
-                     Text="{Binding RedirectDirectory}"/>
+                             Name="txtRedirectDirectory" 
+                             Margin="0,2"
+                             IsReadOnly="True"
+                             Text="{Binding RedirectDirectory}"/>
                             <Button Grid.Row="3" Grid.Column="2" 
-                    Name="btnBrowseRedirectDir"
-                    Content="Browse"
-                    Margin="5,2"
-                    Click="btnBrowseRedirectDir_Click"/>
-
+                            Name="btnBrowseRedirectDir"
+                            Content="Browse"
+                            Margin="5,2"
+                            Click="btnBrowseRedirectDir_Click"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -263,12 +262,12 @@
                     <StackPanel Margin="10">
                         <StackPanel Orientation="Horizontal">
                             <Button Name="btnGenerateBlueskyRss" 
-                Content="Generate Bluesky RSS Feed from Reddit" 
-                Padding="10,5"
-                Margin="5,0"
-                Height="30"
-                HorizontalAlignment="Left"
-                Click="btnGenerateBlueskyRss_Click">
+                                Content="Generate Bluesky RSS Feed from Reddit" 
+                                Padding="10,5"
+                                Margin="5,0"
+                                Height="30"
+                                HorizontalAlignment="Left"
+                                Click="btnGenerateBlueskyRss_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Style.Triggers>
@@ -281,12 +280,12 @@
                             </Button>
 
                             <Button Name="btnGenerateContentRssPage" 
-                Content="Generate Content for RSS Feed from Disk Redirects" 
-                Padding="10,5"
-                Margin="5,0"
-                Height="30"
-                HorizontalAlignment="Left"
-                Click="btnGenerateContentRssPage_Click">
+                                Content="Generate Content for RSS Feed from Disk Redirects" 
+                                Padding="10,5"
+                                Margin="5,0"
+                                Height="30"
+                                HorizontalAlignment="Left"
+                                Click="btnGenerateContentRssPage_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Style.Triggers>
@@ -297,6 +296,25 @@
                                     </Style>
                                 </Button.Style>
                             </Button>
+
+                            <Button Name="btnGenerateEverything" 
+                                Content="Generate Everything, EVERYTHING !" 
+                                Padding="10,5"
+                                Margin="5,0"
+                                Height="30"
+                                HorizontalAlignment="Left"
+                                Click="btnGenerateEverything_Click">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsProcessing}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+
 
                         </StackPanel>
 
