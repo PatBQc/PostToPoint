@@ -17,6 +17,56 @@ namespace PostToPoint.Windows
     {
         private static bool _isTestMode = true;
 
+        private const string RedditToBlogPostPrompt = """
+                Create my blog post content with 4 sections, written in markdown format.  You can use markdown to format the text.
+                
+                The sections are: "Récapitulatif factuel", "Point de vue neutre", "Point de vue optimiste", "Point de vue pessimiste".
+
+                Each section should be written in a way that is engaging and brings the subject within everyone’s reach.
+
+                The Factual Recap "Récapitulatif factuel" should be a objective and factual recap of the post. 
+                If there are technical term to understand, you should explain them in a way that is easy to understand.  
+                This should be the more informative section of them all.
+
+                The Neutral View "Point de vue neutre" should be a neutral interpretation of the post, like the zen middle view without the spiritism.  
+                It should represent what is probable, not necessarily what is possible.  
+                This should be the more engaging and thought provoking section of them all.
+
+                The Optimistic "Point de vue optimiste" View should be a optimistic view of the post, more like what we might ear in the tech bro Silicon Valley community. 
+                It's the more positive and enthusiastic section of them all, betting on what's possible even if a little improbable.
+
+                The Pessimistic "Point de vue pessimiste" View should be a pessimistic view of the post, akin to but not as harsh as the AI doomers can be.  
+                It's the more negative and cautious section of them all, betting on what's probable even if a little improbable.
+
+                Each section will be H1 headers in the markdown file, followed by the content of the section.  
+                It's all written in french for Quebec audience, so be sure to use the right words and expressions.
+                """;
+
+        private const string RedditToTwitterPrompt = """
+                Provide only the direct answer to the following question, without any explanation or additional context:
+
+                You will be transforming a Reddit post into a concise and engaging Twitter post in French (Canadian french or Québec french). 
+                
+                Follow these steps carefully:
+
+                1. Here is the Reddit post content in the section "# REDDIT POST"
+
+                2. Summarize the key points of the Reddit post, focusing on the most interesting or important information.
+
+                3. Create an engaging c post in French based on your summary. The post should be attention-grabbing and informative while maintaining the essence of the original content.
+
+                4. Include 3 to 5 relevant hashtags in French at the end of your post. These hashtags should be related to the main topics or themes of the content.
+
+                5. Ensure that your entire Twitter post, including the hashtags, is less than 250 characters in total.
+
+                6. IMPORTANT: Write your Twitter post without any additional comments or explanations. The output should contain only the content of the Twitter post itself.
+
+                IMPORTANT: Provide your Twitter post as the final output, adhering to all the guidelines mentioned above. 
+                IMPORTANT: ANSWER WITH ONLY THE CONTENT OF THE TWITTER POST.  NOTHING ELSE, NOTHING MORE.  NO ADDITIONNAL COMMENTS.  NOTHING MORE THEN THE POST CONTENT.
+                IMPORTANT: YOU OUTPUT ONLY THE POST.
+                IMPORTANT: YOU DO NOT SAY THING LIKE "here is your post"
+                """;
+
         public static async Task GenerateEverything(string appId,
                                                         string redirectUri,
                                                         string appSecret,
@@ -52,13 +102,16 @@ namespace PostToPoint.Windows
             // transform reddit posts to rss items using System.ServiceModel.Syndication
             var redditToBlueskyPrompt = File.ReadAllText(redditToBlueskyFilename);
 
-            var rssItems = new List<SyndicationItem>();
             Debug.WriteLine("");
             Debug.WriteLine("Reddit posts count: " + redditPosts.Count);
             int redditPostIndex = 0;
 
+            var baseMessages = previousMessages.ToList();
+
             foreach (var redditPost in redditPosts)
             {
+                previousMessages = baseMessages.ToList();
+
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
                 if (SqliteHelper.DoesPostExistInBluesky(redditPost))
@@ -70,47 +123,31 @@ namespace PostToPoint.Windows
                 // Append the Reddit posts to the conversation
                 AppendRedditPostMessages(previousMessages, redditPost);
 
-                // TODO PAT : Here we will start to ask for blog analysis, then twitter, then bluesky, ...
-
                 // We will prompt the LLM to convert the reddit posts to our content
-                var retry = 10;
-                string description = null;
+                // Here we will start to ask for blog analysis, then twitter, then bluesky, ...
+                string answerBlogPost = await QueryLlm(llmChoice, previousMessages, RedditToBlogPostPrompt);
+                previousMessages.Add(new LlmUserAgentMessagePair() { AgentMessage = RedditToBlogPostPrompt, UserMessage = answerBlogPost });
 
-                while (retry-- > 0 && description == null)
-                {
-                    try
-                    {
-                        description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("Error calling Anthropic: " + e.Message);
+                // Now Twitter
+                string answerTwitter = await QueryLlm(llmChoice, previousMessages, RedditToTwitterPrompt);
+                previousMessages.Add(new LlmUserAgentMessagePair() { AgentMessage = RedditToTwitterPrompt, UserMessage = answerTwitter });
 
-                        // Just for this once ;)
-                        await Task.Delay(30000);
-                    }
-                }
+                // Now Bluesky
+                string answerBluesky = await QueryLlm(llmChoice, previousMessages, redditToBlueskyPrompt);
+                previousMessages.Add(new LlmUserAgentMessagePair() { AgentMessage = redditToBlueskyPrompt, UserMessage = answerBluesky });
 
-                if (retry <= 0)
-                {
-                    throw new Exception("Failed to get a response from LLM");
-                }
-
-                description = MicroblogingCleanupText(description);
+                answerBluesky = MicroblogingCleanupText(answerBluesky);
 
                 previousMessages.RemoveAt(previousMessages.Count - 1);
 
-                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory, redditPost.Title, description, redditPost.Title + " " + description + " " + redditPost.GetUri());
+                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory, redditPost.Title, answerBluesky, redditPost.Title + " " + answerBluesky + " " + redditPost.GetUri());
 
                 var uriLength = shortUri.Length + 1;
 
-                if (description.Length > 300 - uriLength - 1)
+                if (answerBluesky.Length > 300 - uriLength - 1)
                 {
-                    description = description.Substring(0, 300 - uriLength - 1);
+                    answerBluesky = answerBluesky.Substring(0, 300 - uriLength - 1);
                 }
-
-                var item = new SyndicationItem(redditPost.Title, description, new Uri(shortUri), "reddit-" + redditPost.Post.Id, new DateTimeOffset(redditPost.Created.ToUniversalTime(), TimeSpan.Zero));
-                item.PublishDate = redditPost.Created;
 
                 var itemUri = redditPost.GetUri();
 
@@ -119,7 +156,6 @@ namespace PostToPoint.Windows
                 if (itemUri.Contains("/i.redd.it/"))
                 {
                     imageUri = itemUri;
-                    item.Links.Add(new SyndicationLink(new Uri(itemUri), "related", "image", GetMimeType(itemUri), await GetLength(itemUri)));
                 }
 
                 string videoUri = string.Empty;
@@ -148,24 +184,19 @@ namespace PostToPoint.Windows
 
                     videoUri = shareLink;
 
-                    // Add link to Bluesky post in the RSS feed
-                    item.Links.Add(new SyndicationLink(new Uri(shareLink), "related", "video", GetMimeType(shortVideoFilename), new FileInfo(shortVideoFilename).Length));
-
                     File.Delete(videoFilename);
                     File.Delete(shortVideoFilename);
                 }
 
-                rssItems.Add(item);
-
                 using var webhook = new ZapierWebhook(App.Options.ZapierBlueSkyWebHookUri);
                 bool success = await webhook.SendToWebhook(
-                            description,
+                            answerBluesky,
                             shortUri,
                             imageUri,
                             videoUri
                         );
 
-                SqliteHelper.AppendRedditPostToBluesky(redditPost, description, shortUri, imageUri, videoUri);
+                SqliteHelper.AppendRedditPostToBluesky(redditPost, answerBluesky, shortUri, imageUri, videoUri);
 
                 if (success)
                 {
@@ -177,28 +208,6 @@ namespace PostToPoint.Windows
                 }
             }
 
-
-
-
-
-
-            //// Create a new SyndicationFeed
-            //// TODO change the id URI to something from the configs
-            //var feed = new SyndicationFeed(rssTitle, rssDescription, new Uri(rssUri), "https://www.patb.ca/rss/bluesky-auto-post.rss", DateTimeOffset.Now, rssItems);
-            //XNamespace atom = "http://www.w3.org/2005/Atom";
-            //feed.ElementExtensions.Add(
-            //    new XElement(atom + "link",
-            //        new XAttribute("href", "https://www.patb.ca/rss/bluesky-auto-post.rss"),
-            //        new XAttribute("rel", "self"),
-            //        new XAttribute("type", "application/rss+xml"))
-            //);
-
-            //// Save that in the rssDirectory with filename "bluesky-auto-post.rss"
-            //using (var writer = XmlWriter.Create(rssFilename))
-            //{
-            //    var formatter = new Rss20FeedFormatter(feed, true);
-            //    formatter.WriteTo(writer);
-            //}
 
 
 
@@ -267,6 +276,7 @@ namespace PostToPoint.Windows
                 sbBlogs.AppendLine("End of blog post" + blogPost);
                 sbBlogs.AppendLine("---------------------------------------------------------------");
                 sbBlogs.AppendLine();
+                sbBlogs.AppendLine();
             }
 
             previousMessages.Add(new LlmUserAgentMessagePair()
@@ -303,6 +313,36 @@ namespace PostToPoint.Windows
             });
         }
 
+
+        private static async Task<string> QueryLlm(string llmChoice, List<LlmUserAgentMessagePair> previousMessages, string redditToBlueskyPrompt)
+        {
+            var retry = 10;
+            string description = null;
+
+            while (retry-- > 0 && description == null)
+            {
+                try
+                {
+                    description = await AnthropicHelper.CallClaude(previousMessages, redditToBlueskyPrompt, llmChoice);
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("Error calling Anthropic: " + e.Message);
+
+                    // Just for this once ;)
+                    await Task.Delay(30000);
+                }
+            }
+
+            if (retry <= 0)
+            {
+                throw new Exception("Failed to get a response from LLM");
+            }
+
+            return description;
+        }
+
+
         public static string MicroblogingCleanupText(string text)
         {
             if (string.IsNullOrEmpty(text)) return text;
@@ -317,27 +357,6 @@ namespace PostToPoint.Windows
             text = text.Replace("\r\n", " ").Replace("\n", " ");
 
             return text.Trim();
-        }
-
-        private static async Task<long> GetLength(string uri)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                // Download image data
-                byte[] imageData = await client.GetByteArrayAsync(uri);
-
-                return imageData.Length;
-            }
-        }
-
-        private static string GetMimeType(string itemUri)
-        {
-            var provider = new FileExtensionContentTypeProvider();
-
-            string contentType;
-            provider.TryGetContentType(itemUri, out contentType);
-
-            return contentType ?? "application/octet-stream";
         }
 
         private static string ShortenUri(string uri, string redirectDirectory, string title, string subheadline, string teaser)
