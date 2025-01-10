@@ -46,7 +46,7 @@ namespace PostToPoint.Windows
             // TODO configure those through config as well
             var parameters = new MessageParameters()
             {
-                System = { new SystemMessage(SystemMessage) },
+                System = new List<SystemMessage> { new SystemMessage(SystemMessage) },
                 Messages = messages,
                 MaxTokens = 1024 * 8,
                 Model = AnthropicModels.Claude35Sonnet,

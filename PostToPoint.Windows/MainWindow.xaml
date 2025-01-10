@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PostToPoint.Windows"
         mc:Ignorable="d"
-        Title="Post to Point" Height="700" Width="800" Background="DarkGray"
+        Title="Post to Point" Height="700" Width="900" Background="DarkGray"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Loaded="Window_Loaded"        
         >

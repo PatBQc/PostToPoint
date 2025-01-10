@@ -106,7 +106,7 @@ namespace PostToPoint.Windows
 
             if (!Directory.Exists(postContentDirectory))
             {
-                throw new DirectoryNotFoundException($"Post content directory not found: {postContentDirectory}");
+                Directory.CreateDirectory(postContentDirectory);
             }
 
             if (!Directory.Exists(redirectDirectory))
@@ -145,8 +145,6 @@ namespace PostToPoint.Windows
 
             foreach (var redditPost in redditPosts)
             {
-                previousMessages = baseMessages.ToList();
-
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
                 if (SqliteHelper.DoesPostExistInBluesky(redditPost))
@@ -154,6 +152,8 @@ namespace PostToPoint.Windows
                     Debug.WriteLine("Already posted about this Reddit post, skipping");
                     continue;
                 }
+
+                previousMessages = baseMessages.ToList();
 
                 // Append the Reddit posts to the conversation
                 AppendRedditPostMessages(previousMessages, redditPost);
