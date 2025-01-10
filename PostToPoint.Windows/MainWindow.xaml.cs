@@ -267,33 +267,33 @@ namespace PostToPoint.Windows
         }
 
         // Browse button click handlers
-        private void btnBrowseRedditToBluesky_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseRedditToBluesky_Click(object sender, RoutedEventArgs e)
         {
             RedditToBlueskyPath = BrowseForFile("Select Reddit to Bluesky Prompt File");
         }
 
-        private void btnBrowseRedditToBlog_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseRedditToBlog_Click(object sender, RoutedEventArgs e)
         {
             RedditToBlogPath = BrowseForFile("Select Reddit to Blog Prompt File");
         }
 
-        private void btnBrowseRedditToLinkedIn_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseRedditToLinkedIn_Click(object sender, RoutedEventArgs e)
         {
             RedditToLinkedInPath = BrowseForFile("Select Reddit to LinkedIn Prompt File");
         }
 
-        private void btnBrowseBlogToBluesky_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseBlogToBluesky_Click(object sender, RoutedEventArgs e)
         {
             BlogToBlueskyPath = BrowseForFile("Select Blog to Bluesky Prompt File");
         }
 
-        private void btnBrowseBlogToLinkedIn_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseBlogToLinkedIn_Click(object sender, RoutedEventArgs e)
         {
             BlogToLinkedInPath = BrowseForFile("Select Blog to LinkedIn Prompt File");
         }
 
         // Helper method for file browsing
-        private string? BrowseForFile(string title)
+        private static string? BrowseForFile(string title)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
@@ -311,43 +311,42 @@ namespace PostToPoint.Windows
         }
 
         // Browse button click handlers
-        private void btnBrowseBlogPostDir_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseBlogPostDir_Click(object sender, RoutedEventArgs e)
         {
             BlogPostDirectory = BrowseForFolder("Select Blog Post Files Directory");
         }
 
-        private void btnBrowseRssDir_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseRssDir_Click(object sender, RoutedEventArgs e)
         {
             RssDirectory = BrowseForFolder("Select RSS Files Directory");
         }
 
-        private void btnBrowsePostContentDir_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowsePostContentDir_Click(object sender, RoutedEventArgs e)
         {
             PostContentDirectory = BrowseForFolder("Select Post Content Directory");
         }
 
-        private void btnBrowseRedirectDir_Click(object sender, RoutedEventArgs e)
+        private void BtnBrowseRedirectDir_Click(object sender, RoutedEventArgs e)
         {
             RedirectDirectory = BrowseForFolder("Select Redirect Directory");
         }
 
         // Helper method for folder browsing
-        private string? BrowseForFolder(string description)
+        private static string? BrowseForFolder(string description)
         {
-            using (var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog(description))
+            using var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog(description);
+
+            dialog.IsFolderPicker = true;
+            if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
             {
-                dialog.IsFolderPicker = true;
-                if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
-                {
-                    string selectedPath = dialog.FileName;
-                    return selectedPath;
-                }
+                string selectedPath = dialog.FileName;
+                return selectedPath;
             }
 
             return null;
         }
 
-        private async void btnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
+        private async void BtnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -398,7 +397,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        private async void btnGenerateContentRssPage_Click(object sender, RoutedEventArgs e)
+        private async void BtnGenerateContentRssPage_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -449,7 +448,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        private async void btnGenerateEverything_Click(object sender, RoutedEventArgs e)
+        private async void BtnGenerateEverything_Click(object sender, RoutedEventArgs e)
         {
             try
             {

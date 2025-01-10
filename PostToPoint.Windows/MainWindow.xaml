@@ -112,10 +112,10 @@
                      IsReadOnly="True"
                      Text="{Binding RedditToBlueskyPath}"/>
                             <Button Grid.Row="0" Grid.Column="2" 
-                    Name="btnBrowseRedditToBluesky"
+                    Name="BtnBrowseRedditToBluesky"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseRedditToBluesky_Click"/>
+                    Click="BtnBrowseRedditToBluesky_Click"/>
 
                             <!-- Reddit to Blog -->
                             <Label Grid.Row="1" Grid.Column="0" 
@@ -127,10 +127,10 @@
                      IsReadOnly="True"
                      Text="{Binding RedditToBlogPath}"/>
                             <Button Grid.Row="1" Grid.Column="2" 
-                    Name="btnBrowseRedditToBlog"
+                    Name="BtnBrowseRedditToBlog"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseRedditToBlog_Click"/>
+                    Click="BtnBrowseRedditToBlog_Click"/>
 
                             <!-- Reddit to LinkedIn -->
                             <Label Grid.Row="2" Grid.Column="0" 
@@ -142,10 +142,10 @@
                      IsReadOnly="True"
                      Text="{Binding RedditToLinkedInPath}"/>
                             <Button Grid.Row="2" Grid.Column="2" 
-                    Name="btnBrowseRedditToLinkedIn"
+                    Name="BtnBrowseRedditToLinkedIn"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseRedditToLinkedIn_Click"/>
+                    Click="BtnBrowseRedditToLinkedIn_Click"/>
 
                             <!-- Blog to Bluesky -->
                             <Label Grid.Row="3" Grid.Column="0" 
@@ -157,10 +157,10 @@
                      IsReadOnly="True"
                      Text="{Binding BlogToBlueskyPath}"/>
                             <Button Grid.Row="3" Grid.Column="2" 
-                    Name="btnBrowseBlogToBluesky"
+                    Name="BtnBrowseBlogToBluesky"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseBlogToBluesky_Click"/>
+                    Click="BtnBrowseBlogToBluesky_Click"/>
 
                             <!-- Blog to LinkedIn -->
                             <Label Grid.Row="4" Grid.Column="0" 
@@ -172,10 +172,10 @@
                      IsReadOnly="True"
                      Text="{Binding BlogToLinkedInPath}"/>
                             <Button Grid.Row="4" Grid.Column="2" 
-                    Name="btnBrowseBlogToLinkedIn"
+                    Name="BtnBrowseBlogToLinkedIn"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseBlogToLinkedIn_Click"/>
+                    Click="BtnBrowseBlogToLinkedIn_Click"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -205,10 +205,10 @@
                      IsReadOnly="True"
                      Text="{Binding BlogPostDirectory}"/>
                             <Button Grid.Row="0" Grid.Column="2" 
-                    Name="btnBrowseBlogPostDir"
+                    Name="BtnBrowseBlogPostDir"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseBlogPostDir_Click"/>
+                    Click="BtnBrowseBlogPostDir_Click"/>
 
                             <!-- RSS files -->
                             <Label Grid.Row="1" Grid.Column="0" 
@@ -220,10 +220,10 @@
                      IsReadOnly="True"
                      Text="{Binding RssDirectory}"/>
                             <Button Grid.Row="1" Grid.Column="2" 
-                    Name="btnBrowseRssDir"
+                    Name="BtnBrowseRssDir"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowseRssDir_Click"/>
+                    Click="BtnBrowseRssDir_Click"/>
 
                             <!-- Post content files -->
                             <Label Grid.Row="2" Grid.Column="0" 
@@ -235,10 +235,10 @@
                      IsReadOnly="True"
                      Text="{Binding PostContentDirectory}"/>
                             <Button Grid.Row="2" Grid.Column="2" 
-                    Name="btnBrowsePostContentDir"
+                    Name="BtnBrowsePostContentDir"
                     Content="Browse"
                     Margin="5,2"
-                    Click="btnBrowsePostContentDir_Click"/>
+                    Click="BtnBrowsePostContentDir_Click"/>
 
                             <!-- Redirect directory -->
                             <Label Grid.Row="3" Grid.Column="0" 
@@ -250,10 +250,10 @@
                              IsReadOnly="True"
                              Text="{Binding RedirectDirectory}"/>
                             <Button Grid.Row="3" Grid.Column="2" 
-                            Name="btnBrowseRedirectDir"
+                            Name="BtnBrowseRedirectDir"
                             Content="Browse"
                             Margin="5,2"
-                            Click="btnBrowseRedirectDir_Click"/>
+                            Click="BtnBrowseRedirectDir_Click"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
@@ -261,13 +261,13 @@
                 <GroupBox Header="Actions" Margin="10">
                     <StackPanel Margin="10">
                         <StackPanel Orientation="Horizontal">
-                            <Button Name="btnGenerateBlueskyRss" 
+                            <Button Name="BtnGenerateBlueskyRss" 
                                 Content="Generate Bluesky RSS Feed from Reddit" 
                                 Padding="10,5"
                                 Margin="5,0"
                                 Height="30"
                                 HorizontalAlignment="Left"
-                                Click="btnGenerateBlueskyRss_Click">
+                                Click="BtnGenerateBlueskyRss_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Style.Triggers>
@@ -279,13 +279,13 @@
                                 </Button.Style>
                             </Button>
 
-                            <Button Name="btnGenerateContentRssPage" 
+                            <Button Name="BtnGenerateContentRssPage" 
                                 Content="Generate Content for RSS Feed from Disk Redirects" 
                                 Padding="10,5"
                                 Margin="5,0"
                                 Height="30"
                                 HorizontalAlignment="Left"
-                                Click="btnGenerateContentRssPage_Click">
+                                Click="BtnGenerateContentRssPage_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Style.Triggers>
@@ -297,13 +297,13 @@
                                 </Button.Style>
                             </Button>
 
-                            <Button Name="btnGenerateEverything" 
+                            <Button Name="BtnGenerateEverything" 
                                 Content="Generate Everything, EVERYTHING !" 
                                 Padding="10,5"
                                 Margin="5,0"
                                 Height="30"
                                 HorizontalAlignment="Left"
-                                Click="btnGenerateEverything_Click">
+                                Click="BtnGenerateEverything_Click">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Style.Triggers>

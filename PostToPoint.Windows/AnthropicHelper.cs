@@ -12,7 +12,7 @@ namespace PostToPoint.Windows
 {
     public class AnthropicHelper
     {
-        private static string SystemMessage = """
+        private static readonly string SystemMessage = """
             You are an expert writer, giving your answer as asked without explaining what you are doing (you know that would'nt be professionnal).
             Provide only the direct answer without any introduction or conclusion.
             Skip any preamble and give me just the requested information.
@@ -46,7 +46,7 @@ namespace PostToPoint.Windows
             // TODO configure those through config as well
             var parameters = new MessageParameters()
             {
-                System = new List<SystemMessage> { new SystemMessage(SystemMessage) },
+                System = { new SystemMessage(SystemMessage) },
                 Messages = messages,
                 MaxTokens = 1024 * 8,
                 Model = AnthropicModels.Claude35Sonnet,

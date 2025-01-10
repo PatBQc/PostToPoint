@@ -21,13 +21,13 @@ namespace PostToPoint.Windows
         private static string _accessToken = string.Empty;
 
         public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(
-            string appId, 
-            string redirectUri, 
-            string appSecret, 
-            string username, 
-            string password, 
-            bool downloadImages, 
-            string timeQuery = "week", 
+            string appId,
+            string redirectUri,
+            string appSecret,
+            string username,
+            string password,
+            bool downloadImages,
+            string timeQuery = "week",
             string sortQuery = "new",
             int oldestDaysInThePast = 7)
         {
@@ -63,7 +63,7 @@ namespace PostToPoint.Windows
             var savedPosts = GetRedditPosts("saved", timeQuery, sortQuery, reddit);
             var upvotedPosts = GetRedditPosts("upvoted", timeQuery, sortQuery, reddit);
 
-            List<Post> posts = new List<Post>(savedPosts);
+            var posts = new List<Post>(savedPosts);
             posts.AddRange(upvotedPosts);
 
             var redditImportantPosts = new List<Post>(
@@ -123,7 +123,7 @@ namespace PostToPoint.Windows
                 continuationPostList.AddRange(subPostList);
 
                 // Get the "after" value for the next batch
-                after = subPostList.Count > 0 ? subPostList[subPostList.Count - 1].Fullname : null;
+                after = subPostList.Count > 0 ? subPostList[^1].Fullname : null;
 
                 // Continue until we've retrieved all posts or reached a desired limit
             } while (after != null && continuationPostList.Count < 10000);
@@ -174,21 +174,6 @@ namespace PostToPoint.Windows
             return outputDir;
         }
 
-        static string GetPostImportantPart(Post post)
-        {
-            if (post is LinkPost linkPost)
-            {
-                return linkPost.URL;
-            }
-
-            if (post is SelfPost selfPost)
-            {
-                return selfPost.SelfText;
-            }
-
-            return post.Title;
-        }
-
         static async Task CaptureScreenshotAsync(string url, string filePath)
         {
             // Download Chromium if necessary
@@ -196,24 +181,25 @@ namespace PostToPoint.Windows
 
             try
             {
-                using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
                     Headless = true,
-                }))
-                using (var page = await browser.NewPageAsync())
+                });
+
+                using var page = await browser.NewPageAsync();
+
+                await page.SetUserAgentAsync("PostToPoint");
+
+                await page.SetViewportAsync(new ViewPortOptions
                 {
-                    await page.SetUserAgentAsync("PostToPoint");
+                    Width = 1280,
+                    //Height = 1280
+                });
 
-                    await page.SetViewportAsync(new ViewPortOptions
-                    {
-                        Width = 1280,
-                        //Height = 1280
-                    });
+                await page.GoToAsync(url);
 
-                    await page.GoToAsync(url);
+                await page.ScreenshotAsync(filePath);
 
-                    await page.ScreenshotAsync(filePath);
-                }
             }
             catch (Exception ex)
             {
@@ -227,46 +213,36 @@ namespace PostToPoint.Windows
 
         static async Task DownloadFileAsync(string url, string downloadFolder, RedditPostData postData)
         {
-            using (var client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("PostToPoint");
+            using var client = new HttpClient();
 
-                using (var response = await client.GetAsync(url))
-                {
-                    response.EnsureSuccessStatusCode();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("PostToPoint");
 
-                    // Try to get filename from content-disposition header
-                    //var fileName = GetFileNameFromContentDisposition(response) ??
-                    //              // If not found, try to get from URL
-                    //              GetFileNameFromUrl(url) ??
-                    //              // If still not found, generate a name with extension from content-type
-                    //              GetFileNameFromContentType(response);
+            using var response = await client.GetAsync(url);
 
-                    var fileName = // If still not found, generate a name with extension from content-type
-                                    GetFileNameFromContentType(response) ??
-                                    // If not found, try to get from URL
-                                    GetFileNameFromUrl(url);
+            response.EnsureSuccessStatusCode();
 
-                    string destinationPath = Path.Combine(downloadFolder, $"{Guid.NewGuid()}-{fileName}");
+            // Try to get filename from content-disposition header
+            //var fileName = GetFileNameFromContentDisposition(response) ??
+            //              // If not found, try to get from URL
+            //              GetFileNameFromUrl(url) ??
+            //              // If still not found, generate a name with extension from content-type
+            //              GetFileNameFromContentType(response);
 
-                    using (var stream = await response.Content.ReadAsStreamAsync())
-                    using (var fileStream = File.Create(destinationPath))
-                    {
-                        await stream.CopyToAsync(fileStream);
-                    }
+            var fileName = // If still not found, generate a name with extension from content-type
+                            GetFileNameFromContentType(response) ??
+                            // If not found, try to get from URL
+                            GetFileNameFromUrl(url);
 
-                    postData.ScreenshotPath = destinationPath;
-                }
-            }
-        }
+            string destinationPath = Path.Combine(downloadFolder, $"{Guid.NewGuid()}-{fileName}");
 
-        static string? GetFileNameFromContentDisposition(HttpResponseMessage response)
-        {
-            if (response.Content.Headers.ContentDisposition != null)
-            {
-                return response.Content.Headers.ContentDisposition.FileName?.Trim('"');
-            }
-            return null;
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var fileStream = File.Create(destinationPath);
+
+            await stream.CopyToAsync(fileStream);
+
+            postData.ScreenshotPath = destinationPath;
+
+
         }
 
         static string? GetFileNameFromUrl(string url)
@@ -292,23 +268,13 @@ namespace PostToPoint.Windows
             var extension = contentType.Split('/').LastOrDefault();
             if (extension != null)
             {
-                switch (extension.ToLower())
+                extension = extension.ToLower() switch
                 {
-                    case "jpeg":
-                    case "jpg":
-                        extension = ".jpg";
-                        break;
-                    case "png":
-                        extension = ".png";
-                        break;
-                    case "pdf":
-                        extension = ".pdf";
-                        break;
-                    // Add more cases as needed
-                    default:
-                        extension = "." + extension;
-                        break;
-                }
+                    "jpeg" or "jpg" => ".jpg",
+                    "png" => ".png",
+                    "pdf" => ".pdf",
+                    _ => "." + extension,
+                };
             }
 
             return $"downloaded_file{extension}";
@@ -319,42 +285,24 @@ namespace PostToPoint.Windows
             // Download Chromium if necessary
             await new BrowserFetcher().DownloadAsync();
 
-            using (var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true,
-            }))
-            using (var page = await browser.NewPageAsync())
+            });
+
+            using var page = await browser.NewPageAsync();
+
+            await page.SetUserAgentAsync("PostToPoint");
+
+            await page.SetViewportAsync(new ViewPortOptions
             {
-                await page.SetUserAgentAsync("PostToPoint");
+                Width = 1280,
+                Height = 720
+            });
 
-                await page.SetViewportAsync(new ViewPortOptions
-                {
-                    Width = 1280,
-                    Height = 720
-                });
+            await page.SetContentAsync(html);
 
-                await page.SetContentAsync(html);
-
-                await page.ScreenshotAsync(filePath);
-            }
-        }
-
-        static string GetPostDescriptions(Post post)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Title: {post.Title}");
-            sb.AppendLine($"Subreddit: {post.Subreddit}");
-            sb.AppendLine($"Date: {post.Created}");
-            if (post is LinkPost linkPost)
-            {
-                sb.AppendLine($"URL: {linkPost.URL}");
-            }
-            sb.AppendLine($"Permalink: {post.Permalink}");
-            sb.AppendLine($"Votes: Upvotes {post.UpVotes} ⬆️  Downvotes {post.DownVotes} ⬇️  Upvote Ratio {post.UpvoteRatio * 100} %");
-            sb.AppendLine($"NSFW: {post.NSFW}");
-            //sb.AppendLine($"Comments: {post.Comments.Top[0].NumReplies}");
-
-            return sb.ToString();
+            await page.ScreenshotAsync(filePath);
         }
 
         internal static async Task<string> GetRedditVideoStream(RedditPostData postData)
@@ -380,22 +328,22 @@ namespace PostToPoint.Windows
             startIndex += "fallback_url\": \"".Length;
 
             // Find the closing quote
-            int endIndex = jsonString.IndexOf("\"", startIndex);
+            int endIndex = jsonString.IndexOf('"', startIndex);
             if (endIndex == -1)
             {
                 throw new InvalidOperationException("Could not find end of fallback_url in response");
             }
 
             // Extract the URL
-            string url = jsonString.Substring(startIndex, endIndex - startIndex);
+            string url = jsonString[startIndex..endIndex];
 
-            int queryIndex = url.IndexOf("?");
+            int queryIndex = url.IndexOf('?');
             if (queryIndex == -1)
             {
                 throw new InvalidOperationException("Could not find query parameters in URL");
             }
 
-            return url.Substring(0, queryIndex);
+            return url[..queryIndex];
         }
     }
 }

@@ -32,7 +32,7 @@ namespace PostToPoint.Windows
         {
             ArgumentNullException.ThrowIfNull(Post);
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine(GetMetadata());
 
             if (!string.IsNullOrEmpty(SelfText))
@@ -104,7 +104,7 @@ namespace PostToPoint.Windows
             if (maxComments != -1 && commentCount > maxComments) return;
 
             // Add indentation based on depth
-            string indent = new string(' ', depth * 4);
+            var indent = new string(' ', depth * 4);
 
             // Add the comment
             sb.AppendLine($"{indent}{comment.Body}");

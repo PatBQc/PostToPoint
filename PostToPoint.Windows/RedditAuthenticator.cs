@@ -35,33 +35,32 @@ namespace PostToPoint.Windows
 
         public async Task<string> GetAccessTokenAsync()
         {
-            using (var client = new HttpClient())
-            {
-                var authHeader = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_clientId}:{_clientSecret}"));
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authHeader);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(_userAgent);
+            using var client = new HttpClient();
 
-                var content = new FormUrlEncodedContent(new[]
-                {
-                new KeyValuePair<string, string>("grant_type", "password"),
-                new KeyValuePair<string, string>("username", _username),
-                new KeyValuePair<string, string>("password", _password),
-                new KeyValuePair<string, string>("redirect_uri", _redirectUri)
+            var authHeader = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_clientId}:{_clientSecret}"));
+            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", authHeader);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(_userAgent);
+
+            var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                { "grant_type", "password" },
+                { "username", _username },
+                { "password", _password },
+                { "redirect_uri", _redirectUri }
             });
 
-                var response = await client.PostAsync(TokenUrl, content);
-                var responseContent = await response.Content.ReadAsStringAsync();
+            var response = await client.PostAsync(TokenUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var tokenResponse = JsonSerializer.Deserialize<RedditTokenResponse>(responseContent) 
-                        ?? throw new InvalidOperationException("Failed to deserialize token response");
-                    return tokenResponse.access_token ?? throw new InvalidOperationException("Access token is null");
-                }
-                else
-                {
-                    throw new Exception($"Failed to obtain refresh token. Status code: {response.StatusCode}, Response: {responseContent}");
-                }
+            if (response.IsSuccessStatusCode)
+            {
+                var tokenResponse = JsonSerializer.Deserialize<RedditTokenResponse>(responseContent)
+                    ?? throw new InvalidOperationException("Failed to deserialize token response");
+                return tokenResponse.access_token ?? throw new InvalidOperationException("Access token is null");
+            }
+            else
+            {
+                throw new Exception($"Failed to obtain refresh token. Status code: {response.StatusCode}, Response: {responseContent}");
             }
         }
     }

@@ -14,7 +14,7 @@ namespace PostToPoint.Windows
     /// </summary>
     public partial class App : Application
     {
-        public static CommandLineOptions Options = new CommandLineOptions();
+        private static CommandLineOptions _options = new();
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -22,12 +22,12 @@ namespace PostToPoint.Windows
 
             // Parse the command line arguments to replace args with the contents of config files
             // if an argument starts with @, read the file and replace the argument with the contents of the file
-            List<string> args = new List<string>();
-            foreach(var arg in e.Args)
+            var args = new List<string>();
+            foreach (var arg in e.Args)
             {
-                if (arg.StartsWith("@"))
+                if (arg.StartsWith('@'))
                 {
-                    args.AddRange(File.ReadAllLines(arg.Substring(1)));
+                    args.AddRange(File.ReadAllLines(arg[1..]));
                 }
                 else
                 {
@@ -37,7 +37,7 @@ namespace PostToPoint.Windows
 
             // Explicitly declare the result variable
             ParserResult<CommandLineOptions> result = Parser.Default.ParseArguments<CommandLineOptions>(args);
-            
+
             // Parse the command line arguments
             result
                 .WithParsed(opts =>
@@ -62,7 +62,7 @@ namespace PostToPoint.Windows
                 .WithNotParsed(errors =>
                 {
                     // This code runs if there are any parsing errors (like missing required parameters)
-                    var helpText = HelpText.AutoBuild(result, h => 
+                    var helpText = HelpText.AutoBuild(result, h =>
                     {
                         h.AdditionalNewLineAfterOption = false;
                         h.Heading = "PostToPoint v" + Assembly.GetExecutingAssembly().GetName().Version;
@@ -76,6 +76,12 @@ namespace PostToPoint.Windows
                     MessageBox.Show("Invalid command line arguments. Check --help for usage.");
                     Environment.Exit(1);
                 });
+        }
+
+        public static CommandLineOptions Options
+        {
+            get => _options;
+            set => _options = value;
         }
     }
 
