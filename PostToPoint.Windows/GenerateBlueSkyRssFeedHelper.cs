@@ -183,7 +183,8 @@ namespace PostToPoint.Windows
 
                 rssItems.Add(item);
 
-                using var webhook = new ZapierWebhook(App.Options.ZapierBlueSkyWebHookUri);
+                var webhookUrl = App.Options.ZapierBlueSkyWebHookUri ?? throw new InvalidOperationException("Zapier webhook URL not configured");
+                using var webhook = new ZapierWebhook(webhookUrl);
                 bool success = await webhook.SendToWebhook(
                             description,
                             shortUri,

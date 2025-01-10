@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
+﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
 using PuppeteerSharp;
 using Reddit;
 using Reddit.Controllers;
