@@ -1,4 +1,4 @@
-﻿using Microsoft.WindowsAPICodePack.Dialogs;
+﻿﻿using Microsoft.WindowsAPICodePack.Dialogs;
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
@@ -19,25 +19,25 @@ namespace PostToPoint.Windows
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private string _redditAppId;
-        private string _redditAppSecret;
-        private string _redditRedirectUri;
-        private string _redditUsername;
+        private string? _redditAppId;
+        private string? _redditAppSecret;
+        private string? _redditRedirectUri;
+        private string? _redditUsername;
 
-        private string _redditToBlueskyPath;
-        private string _redditToBlogPath;
-        private string _redditToLinkedInPath;
-        private string _blogToBlueskyPath;
-        private string _blogToLinkedInPath;
+        private string? _redditToBlueskyPath;
+        private string? _redditToBlogPath;
+        private string? _redditToLinkedInPath;
+        private string? _blogToBlueskyPath;
+        private string? _blogToLinkedInPath;
 
-        private string _blogPostDirectory;
-        private string _rssDirectory;
-        private string _postContentDirectory;
-        private string _redirectDirectory;
+        private string? _blogPostDirectory;
+        private string? _rssDirectory;
+        private string? _postContentDirectory;
+        private string? _redirectDirectory;
 
         private bool _isProcessing;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public MainWindow()
         {
@@ -75,7 +75,7 @@ namespace PostToPoint.Windows
         }
 
 
-        public string RedditAppId
+        public string? RedditAppId
         {
             get => _redditAppId;
             set
@@ -85,7 +85,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedditAppSecret
+        public string? RedditAppSecret
         {
             get => _redditAppSecret;
             set
@@ -95,7 +95,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedditRedirectUri
+        public string? RedditRedirectUri
         {
             get => _redditRedirectUri;
             set
@@ -105,7 +105,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedditUsername
+        public string? RedditUsername
         {
             get => _redditUsername;
             set
@@ -116,18 +116,21 @@ namespace PostToPoint.Windows
         }
 
         // Method to get password (since PasswordBox doesn't support binding for security reasons)
-        private string GetRedditPassword()
+        private string? GetRedditPassword()
         {
-            return pwbRedditPassword.Password;
+            return pwbRedditPassword?.Password;
         }
 
         // Method to set password
-        private void SetRedditPassword(string password)
+        private void SetRedditPassword(string? password)
         {
-            pwbRedditPassword.Password = password;
+            if (pwbRedditPassword != null)
+            {
+                pwbRedditPassword.Password = password ?? string.Empty;
+            }
         }
 
-        public string RedditToBlueskyPath
+        public string? RedditToBlueskyPath
         {
             get => _redditToBlueskyPath;
             set
@@ -137,7 +140,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedditToBlogPath
+        public string? RedditToBlogPath
         {
             get => _redditToBlogPath;
             set
@@ -147,7 +150,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedditToLinkedInPath
+        public string? RedditToLinkedInPath
         {
             get => _redditToLinkedInPath;
             set
@@ -157,7 +160,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string BlogToBlueskyPath
+        public string? BlogToBlueskyPath
         {
             get => _blogToBlueskyPath;
             set
@@ -167,7 +170,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string BlogToLinkedInPath
+        public string? BlogToLinkedInPath
         {
             get => _blogToLinkedInPath;
             set
@@ -177,7 +180,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string BlogPostDirectory
+        public string? BlogPostDirectory
         {
             get => _blogPostDirectory;
             set
@@ -187,7 +190,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RssDirectory
+        public string? RssDirectory
         {
             get => _rssDirectory;
             set
@@ -197,7 +200,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string PostContentDirectory
+        public string? PostContentDirectory
         {
             get => _postContentDirectory;
             set
@@ -207,7 +210,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        public string RedirectDirectory
+        public string? RedirectDirectory
         {
             get => _redirectDirectory;
             set
@@ -255,7 +258,7 @@ namespace PostToPoint.Windows
         }
 
         // Helper method for file browsing
-        private string BrowseForFile(string title)
+        private string? BrowseForFile(string title)
         {
             var openFileDialog = new Microsoft.Win32.OpenFileDialog
             {
@@ -294,7 +297,7 @@ namespace PostToPoint.Windows
         }
 
         // Helper method for folder browsing
-        private string BrowseForFolder(string description)
+        private string? BrowseForFolder(string description)
         {
             using (var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog(description))
             {

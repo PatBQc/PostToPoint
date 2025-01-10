@@ -1,4 +1,4 @@
-﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
+﻿﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
 using PuppeteerSharp;
 using Reddit;
 using Reddit.Controllers;
@@ -18,8 +18,7 @@ namespace PostToPoint.Windows
 {
     class RedditHelper
     {
-        private static string _accessToken = null;
-
+        private static string _accessToken = string.Empty;
 
         public static async Task<List<RedditPostData>> GetMyImportantRedditPosts(
             string appId, 
@@ -28,10 +27,18 @@ namespace PostToPoint.Windows
             string username, 
             string password, 
             bool downloadImages, 
-            string timeQuery= "week", 
+            string timeQuery = "week", 
             string sortQuery = "new",
             int oldestDaysInThePast = 7)
         {
+            ArgumentNullException.ThrowIfNull(appId);
+            ArgumentNullException.ThrowIfNull(redirectUri);
+            ArgumentNullException.ThrowIfNull(appSecret);
+            ArgumentNullException.ThrowIfNull(username);
+            ArgumentNullException.ThrowIfNull(password);
+            ArgumentNullException.ThrowIfNull(timeQuery);
+            ArgumentNullException.ThrowIfNull(sortQuery);
+
             string batchTag = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
 
             DateTime oldestPostAccepted = DateTime.Now.AddDays(-oldestDaysInThePast);
@@ -309,8 +316,6 @@ namespace PostToPoint.Windows
             return $"downloaded_file{extension}";
         }
 
-
-
         static async Task CaptureScreenshotHtmlAsync(string html, string filePath)
         {
             // Download Chromium if necessary
@@ -382,37 +387,6 @@ namespace PostToPoint.Windows
             url = url.Substring(0, url.IndexOf("?"));
 
             return url;
-
-            //jsonString
-
-            ////foreach(var child in root.EnumerateArray())
-            ////{
-            ////    fallbackUrl = JsonPathHelper.FindFirstValidPath(child, new JsonPathElement[]
-            ////    {
-            ////        new JsonPathElement("data"),
-            ////        new JsonPathElement("children", true),
-            ////        new JsonPathElement("data"),
-            ////        new JsonPathElement("secure_media"),
-            ////        new JsonPathElement("reddit_video"),
-            ////        new JsonPathElement("fallback_url")
-            ////    });
-
-            ////    if (fallbackUrl != null)
-            ////        break;
-            ////}
-
-            ////string fallbackUrl = root[0]
-            ////    .GetProperty("data")
-            ////    .GetProperty("children")[0]
-            ////    .GetProperty("data")
-            ////    .GetProperty("secure_media")
-            ////    .GetProperty("reddit_video")
-            ////    .GetProperty("fallback_url")
-            ////    .GetString();
-
-            //fallbackUrl = fallbackUrl.Substring(0, fallbackUrl.IndexOf("?"));
-
-            //return fallbackUrl;
         }
     }
 }

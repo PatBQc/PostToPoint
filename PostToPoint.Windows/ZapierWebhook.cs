@@ -11,10 +11,10 @@ namespace PostToPoint.Windows
 
     public class WebhookData
     {
-        public string Description { get; set; }
-        public string Link { get; set; }
-        public string ImageLink { get; set; }
-        public string VideoLink { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Link { get; set; } = string.Empty;
+        public string ImageLink { get; set; } = string.Empty;
+        public string VideoLink { get; set; } = string.Empty;
     }
 
 

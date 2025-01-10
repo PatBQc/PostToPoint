@@ -6,12 +6,12 @@ namespace PostToPoint.Windows
 {
     public class MarkdownTemplate
     {
-        public string Title { get; set; }
-        public string Subheadline { get; set; }
-        public string Teaser { get; set; }
-        public string Slug { get; set; }
-        public string Redirect { get; set; }
-        public string Content { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Subheadline { get; set; }
+        public string? Teaser { get; set; }
+        public string Slug { get; set; } = string.Empty;
+        public string Redirect { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
 
         public static MarkdownTemplate ParseFromFile(string filePath)
         {

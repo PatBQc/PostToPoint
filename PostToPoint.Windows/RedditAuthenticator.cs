@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +18,13 @@ namespace PostToPoint.Windows
 
         public RedditAuthenticator(string clientId, string clientSecret, string username, string password, string userAgent, string redirectUri)
         {
+            ArgumentNullException.ThrowIfNull(clientId);
+            ArgumentNullException.ThrowIfNull(clientSecret);
+            ArgumentNullException.ThrowIfNull(username);
+            ArgumentNullException.ThrowIfNull(password);
+            ArgumentNullException.ThrowIfNull(userAgent);
+            ArgumentNullException.ThrowIfNull(redirectUri);
+
             _clientId = clientId;
             _clientSecret = clientSecret;
             _username = username;
@@ -47,8 +54,9 @@ namespace PostToPoint.Windows
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var tokenResponse = JsonSerializer.Deserialize<RedditTokenResponse>(responseContent);
-                    return tokenResponse.access_token;
+                    var tokenResponse = JsonSerializer.Deserialize<RedditTokenResponse>(responseContent) 
+                        ?? throw new InvalidOperationException("Failed to deserialize token response");
+                    return tokenResponse.access_token ?? throw new InvalidOperationException("Access token is null");
                 }
                 else
                 {

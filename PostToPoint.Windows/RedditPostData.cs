@@ -1,4 +1,4 @@
-﻿using Reddit.Controllers;
+﻿﻿using Reddit.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +11,11 @@ namespace PostToPoint.Windows
     {
         public string Title { get; set; }
         public string Url { get; set; }
-        public string SelfText { get; set; }
-        public string SelfTextHTML { get; set; }
+        public string? SelfText { get; set; }
+        public string? SelfTextHTML { get; set; }
         public string Subreddit { get; set; }
         public DateTime Created { get; set; }
-        public string ScreenshotPath { get; set; }
+        public string? ScreenshotPath { get; set; }
 
         public Post Post { get; set; }
 
