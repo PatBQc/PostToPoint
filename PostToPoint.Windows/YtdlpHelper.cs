@@ -12,7 +12,20 @@ namespace PostToPoint.Windows
     {
         public static void DownloadVideo(string uri, string path)
         {
-            // Find yt-dlp.exe executable path.  If it's in current directory: take it.  Otherwise, search in PATH
+            ArgumentNullException.ThrowIfNull(uri);
+            ArgumentNullException.ThrowIfNull(path);
+
+            if (string.IsNullOrWhiteSpace(uri))
+            {
+                throw new ArgumentException("URI cannot be empty", nameof(uri));
+            }
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                throw new ArgumentException("Path cannot be empty", nameof(path));
+            }
+
+            // Find yt-dlp.exe executable path. If it's in current directory: take it. Otherwise, search in PATH
             var ytdlp = FindYtdlpPath();
 
             // Execute yt-dlp.exe command to download the video
@@ -38,6 +51,11 @@ namespace PostToPoint.Windows
                 process.BeginErrorReadLine();
 
                 process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    throw new ApplicationException($"yt-dlp process exited with code {process.ExitCode}");
+                }
             }
             else
             {
@@ -47,22 +65,23 @@ namespace PostToPoint.Windows
 
         private static string FindYtdlpPath()
         {
-            string ytdlpPath = "";
-
-            if (string.IsNullOrEmpty(ytdlpPath))
+            // First try current directory
+            var currentDirPath = Path.Combine(Directory.GetCurrentDirectory(), "yt-dlp.exe");
+            if (File.Exists(currentDirPath))
             {
-                ytdlpPath = Path.Combine(Directory.GetCurrentDirectory(), "yt-dlp.exe");
+                return currentDirPath;
             }
 
-            if (!File.Exists(ytdlpPath))
+            // Then try PATH
+            var environmentPath = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(environmentPath))
             {
-                var enviromentPath = System.Environment.GetEnvironmentVariable("PATH");
-
-                var paths = enviromentPath.Split(';');
-                ytdlpPath = paths.Select(x => Path.Combine(x, "yt-dlp.exe"))
-                                   .Where(x => File.Exists(x))
-                                   .FirstOrDefault();
+                throw new InvalidOperationException("PATH environment variable is not set");
             }
+
+            var paths = environmentPath.Split(';');
+            var ytdlpPath = paths.Select(x => Path.Combine(x, "yt-dlp.exe"))
+                               .FirstOrDefault(File.Exists);
 
             if (string.IsNullOrEmpty(ytdlpPath))
             {
@@ -71,6 +90,5 @@ namespace PostToPoint.Windows
 
             return ytdlpPath;
         }
-
     }
 }

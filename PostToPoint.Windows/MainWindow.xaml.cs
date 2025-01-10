@@ -66,7 +66,6 @@ namespace PostToPoint.Windows
                 PostContentDirectory = App.Options.PostContentDirectory;
                 RedirectDirectory = App.Options.RedirectDirectory;
             }));
-
         }
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -74,6 +73,43 @@ namespace PostToPoint.Windows
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private bool ValidateRequiredSettings()
+        {
+            var missingSettings = new List<string>();
+
+            if (string.IsNullOrEmpty(RedditAppId))
+                missingSettings.Add("Reddit App ID");
+            if (string.IsNullOrEmpty(RedditAppSecret))
+                missingSettings.Add("Reddit App Secret");
+            if (string.IsNullOrEmpty(RedditRedirectUri))
+                missingSettings.Add("Reddit Redirect URI");
+            if (string.IsNullOrEmpty(RedditUsername))
+                missingSettings.Add("Reddit Username");
+            if (string.IsNullOrEmpty(GetRedditPassword()))
+                missingSettings.Add("Reddit Password");
+            if (string.IsNullOrEmpty(RedditToBlueskyPath))
+                missingSettings.Add("Reddit to Bluesky Prompt File");
+            if (string.IsNullOrEmpty(RssDirectory))
+                missingSettings.Add("RSS Directory");
+            if (string.IsNullOrEmpty(BlogPostDirectory))
+                missingSettings.Add("Blog Post Directory");
+            if (string.IsNullOrEmpty(PostContentDirectory))
+                missingSettings.Add("Post Content Directory");
+            if (string.IsNullOrEmpty(RedirectDirectory))
+                missingSettings.Add("Redirect Directory");
+
+            if (missingSettings.Count > 0)
+            {
+                MessageBox.Show(
+                    $"Please configure the following settings before proceeding:\n\n{string.Join("\n", missingSettings)}",
+                    "Missing Configuration",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
+        }
 
         public string? RedditAppId
         {
@@ -230,7 +266,6 @@ namespace PostToPoint.Windows
             }
         }
 
-
         // Browse button click handlers
         private void btnBrowseRedditToBluesky_Click(object sender, RoutedEventArgs e)
         {
@@ -305,7 +340,6 @@ namespace PostToPoint.Windows
                 if (dialog.ShowDialog() == CommonFileDialogResult.Ok)
                 {
                     string selectedPath = dialog.FileName;
-
                     return selectedPath;
                 }
             }
@@ -313,49 +347,37 @@ namespace PostToPoint.Windows
             return null;
         }
 
-
-
         private async void btnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 IsProcessing = true;
 
-                // Validate required settings
-                if (string.IsNullOrEmpty(RedditToBlueskyPath) ||
-                    string.IsNullOrEmpty(RssDirectory) ||
-                    string.IsNullOrEmpty(RedditAppId))
+                if (!ValidateRequiredSettings())
                 {
-                    MessageBox.Show("Please configure all required settings before generating the RSS feed.",
-                                  "Missing Configuration",
-                                  MessageBoxButton.OK,
-                                  MessageBoxImage.Warning);
                     return;
                 }
 
                 // Perform the RSS feed generation
                 await Task.Run(async () =>
                 {
-                    // TODO work to surface every parameter in the UI / CLI args
                     await GenerateBlueSkyRssFeedHelper.GenerateBlueSkyRssFeed(
-                        RedditAppId,
-                        RedditRedirectUri,
-                        RedditAppSecret,
-                        RedditUsername,
-                        GetRedditPassword(),
+                        RedditAppId!,
+                        RedditRedirectUri!,
+                        RedditAppSecret!,
+                        RedditUsername!,
+                        GetRedditPassword()!,
                         false,
                         "Bluesky Auto Post",
                         "RSS feed generated for Bluesky Auto Post from Reddit Upvotes and Saved posts",
                         "https://www.patb.ca/rss/bluesky-auto-post.rss",
-                        System.IO.Path.Combine(RssDirectory, "bluesky-auto-post.xml"),
-                        BlogPostDirectory,
+                        System.IO.Path.Combine(RssDirectory!, "bluesky-auto-post.xml"),
+                        BlogPostDirectory!,
                         App.Options.LlmChoice,
-                        RedditToBlueskyPath,
-                        PostContentDirectory,
-                        RedirectDirectory
+                        RedditToBlueskyPath!,
+                        PostContentDirectory!,
+                        RedirectDirectory!
                         );
-
-
                 });
 
                 MessageBox.Show("Bluesky RSS feed has been generated successfully!",
@@ -365,7 +387,7 @@ namespace PostToPoint.Windows
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
+                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex}",
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
@@ -382,41 +404,31 @@ namespace PostToPoint.Windows
             {
                 IsProcessing = true;
 
-                // Validate required settings
-                if (string.IsNullOrEmpty(RedditToBlueskyPath) ||
-                    string.IsNullOrEmpty(RssDirectory) ||
-                    string.IsNullOrEmpty(RedditAppId))
+                if (!ValidateRequiredSettings())
                 {
-                    MessageBox.Show("Please configure all required settings before generating the RSS feed content.",
-                                  "Missing Configuration",
-                                  MessageBoxButton.OK,
-                                  MessageBoxImage.Warning);
                     return;
                 }
 
                 // Perform the RSS feed generation
                 await Task.Run(async () =>
                 {
-                    // TODO work to surface every parameter in the UI / CLI args
                     await GenerateContentRssPageHelper.GenerateContentRssPage(
-                        RedditAppId,
-                        RedditRedirectUri,
-                        RedditAppSecret,
-                        RedditUsername,
-                        GetRedditPassword(),
+                        RedditAppId!,
+                        RedditRedirectUri!,
+                        RedditAppSecret!,
+                        RedditUsername!,
+                        GetRedditPassword()!,
                         false,
                         "Bluesky Auto Post",
                         "RSS feed generated for Bluesky Auto Post from Reddit Upvotes and Saved posts",
                         "https://www.patb.ca/rss/bluesky-auto-post.rss",
-                        System.IO.Path.Combine(RssDirectory, "bluesky-auto-post.xml"),
-                        BlogPostDirectory,
+                        System.IO.Path.Combine(RssDirectory!, "bluesky-auto-post.xml"),
+                        BlogPostDirectory!,
                         App.Options.LlmChoice,
-                        RedditToBlueskyPath,
-                        PostContentDirectory,
-                        RedirectDirectory
+                        RedditToBlueskyPath!,
+                        PostContentDirectory!,
+                        RedirectDirectory!
                         );
-
-
                 });
 
                 MessageBox.Show("Bluesky RSS feed content has been generated successfully!",
@@ -426,7 +438,7 @@ namespace PostToPoint.Windows
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while generating the RSS feed content:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
+                MessageBox.Show($"An error occurred while generating the RSS feed content:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex}",
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
@@ -437,49 +449,37 @@ namespace PostToPoint.Windows
             }
         }
 
-
         private async void btnGenerateEverything_Click(object sender, RoutedEventArgs e)
         {
-            // TODO Pat: You are now working here
             try
             {
                 IsProcessing = true;
 
-                // Validate required settings
-                if (string.IsNullOrEmpty(RedditToBlueskyPath) ||
-                    string.IsNullOrEmpty(RssDirectory) ||
-                    string.IsNullOrEmpty(RedditAppId))
+                if (!ValidateRequiredSettings())
                 {
-                    MessageBox.Show("Please configure all required settings before generating the RSS feed content.",
-                                  "Missing Configuration",
-                                  MessageBoxButton.OK,
-                                  MessageBoxImage.Warning);
                     return;
                 }
 
                 // Perform the RSS feed generation
                 await Task.Run(async () =>
                 {
-                    // TODO work to surface every parameter in the UI / CLI args
                     await GenerateEverythingHelper.GenerateEverything(
-                        RedditAppId,
-                        RedditRedirectUri,
-                        RedditAppSecret,
-                        RedditUsername,
-                        GetRedditPassword(),
+                        RedditAppId!,
+                        RedditRedirectUri!,
+                        RedditAppSecret!,
+                        RedditUsername!,
+                        GetRedditPassword()!,
                         false,
                         "Bluesky Auto Post",
                         "RSS feed generated for Bluesky Auto Post from Reddit Upvotes and Saved posts",
                         "https://www.patb.ca/rss/bluesky-auto-post.rss",
-                        System.IO.Path.Combine(RssDirectory, "bluesky-auto-post.xml"),
-                        BlogPostDirectory,
+                        System.IO.Path.Combine(RssDirectory!, "bluesky-auto-post.xml"),
+                        BlogPostDirectory!,
                         App.Options.LlmChoice,
-                        RedditToBlueskyPath,
-                        PostContentDirectory,
-                        RedirectDirectory
+                        RedditToBlueskyPath!,
+                        PostContentDirectory!,
+                        RedirectDirectory!
                         );
-
-
                 });
 
                 MessageBox.Show("Bluesky RSS feed content has been generated successfully!",
@@ -489,7 +489,7 @@ namespace PostToPoint.Windows
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"An error occurred while generating the RSS feed content:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex.ToString()}",
+                MessageBox.Show($"An error occurred while generating the RSS feed content:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex}",
                               "Error",
                               MessageBoxButton.OK,
                               MessageBoxImage.Error);
@@ -499,9 +499,6 @@ namespace PostToPoint.Windows
                 IsProcessing = false;
             }
         }
-
-
-
 
         public class BooleanToVisibilityConverter : IValueConverter
         {

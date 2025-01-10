@@ -9,8 +9,9 @@ namespace PostToPoint.Windows
 {
     internal class JsonPathHelper
     {
-        internal static string FindFirstValidPath(JsonElement element, JsonPathElement[] path, int pathIndex = 0)
+        internal static string? FindFirstValidPath(JsonElement element, JsonPathElement[] path, int pathIndex = 0)
         {
+            ArgumentNullException.ThrowIfNull(path);
             if (pathIndex >= path.Length)
             {
                 return element.ValueKind == JsonValueKind.String ? element.GetString() : null;
@@ -19,19 +20,25 @@ namespace PostToPoint.Windows
             var currentPathElement = path[pathIndex];
 
             if (!element.TryGetProperty(currentPathElement.PropertyName, out JsonElement nextElement))
+            {
                 return null;
+            }
 
             if (nextElement.ValueKind == JsonValueKind.Null)
+            {
                 return null;
+            }
 
             if (currentPathElement.IsList)
             {
                 // For array elements, try each item until we find a valid path
                 foreach (JsonElement arrayElement in nextElement.EnumerateArray())
                 {
-                    string result = FindFirstValidPath(arrayElement, path, pathIndex + 1);
+                    string? result = FindFirstValidPath(arrayElement, path, pathIndex + 1);
                     if (result != null)
+                    {
                         return result;
+                    }
                 }
                 return null;
             }

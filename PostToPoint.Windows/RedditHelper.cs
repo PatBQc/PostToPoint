@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
+﻿﻿﻿﻿﻿﻿using Microsoft.Graph.Drives.Item.Items.Item.GetActivitiesByIntervalWithStartDateTimeWithEndDateTimeWithInterval;
 using PuppeteerSharp;
 using Reddit;
 using Reddit.Controllers;
@@ -76,18 +76,16 @@ namespace PostToPoint.Windows
             var postDataList = new List<RedditPostData>();
             foreach (var post in redditImportantPosts)
             {
+                string url = post is LinkPost linkPost ? linkPost.URL : $"https://www.reddit.com{post.Permalink}";
+
                 var postData = new RedditPostData()
                 {
                     Subreddit = post.Subreddit,
                     Created = post.Created,
                     Post = post,
-                    Title = post.Title
+                    Title = post.Title,
+                    Url = url
                 };
-
-                if (post is LinkPost linkPost)
-                {
-                    postData.Url = linkPost.URL;
-                }
 
                 if (post is SelfPost selfPost)
                 {
@@ -113,7 +111,7 @@ namespace PostToPoint.Windows
         private static List<Post> GetRedditPosts(string whereQuery, string timeQuery, string sortQuery, RedditClient reddit)
         {
             var continuationPostList = new List<Post>();
-            string after = null;
+            string? after = null;
 
             // Get saved posts (change to GetUpvoted for liked posts)
             do
@@ -262,7 +260,7 @@ namespace PostToPoint.Windows
             }
         }
 
-        static string GetFileNameFromContentDisposition(HttpResponseMessage response)
+        static string? GetFileNameFromContentDisposition(HttpResponseMessage response)
         {
             if (response.Content.Headers.ContentDisposition != null)
             {
@@ -271,7 +269,7 @@ namespace PostToPoint.Windows
             return null;
         }
 
-        static string GetFileNameFromUrl(string url)
+        static string? GetFileNameFromUrl(string url)
         {
             try
             {
@@ -373,20 +371,31 @@ namespace PostToPoint.Windows
             using JsonDocument document = JsonDocument.Parse(jsonString);
             JsonElement root = document.RootElement;
 
-            string fallbackUrl = null;
-
             // Find the starting position after "fallback_url\": \""
-            int startIndex = jsonString.IndexOf("fallback_url") + "fallback_url\": \"".Length;
+            int startIndex = jsonString.IndexOf("fallback_url");
+            if (startIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find fallback_url in response");
+            }
+            startIndex += "fallback_url\": \"".Length;
 
             // Find the closing quote
             int endIndex = jsonString.IndexOf("\"", startIndex);
+            if (endIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find end of fallback_url in response");
+            }
 
             // Extract the URL
             string url = jsonString.Substring(startIndex, endIndex - startIndex);
 
-            url = url.Substring(0, url.IndexOf("?"));
+            int queryIndex = url.IndexOf("?");
+            if (queryIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find query parameters in URL");
+            }
 
-            return url;
+            return url.Substring(0, queryIndex);
         }
     }
 }

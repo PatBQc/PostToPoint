@@ -38,6 +38,41 @@ namespace PostToPoint.Windows
             string redirectDirectory
             )
         {
+            ArgumentNullException.ThrowIfNull(appId);
+            ArgumentNullException.ThrowIfNull(redirectUri);
+            ArgumentNullException.ThrowIfNull(appSecret);
+            ArgumentNullException.ThrowIfNull(username);
+            ArgumentNullException.ThrowIfNull(password);
+            ArgumentNullException.ThrowIfNull(rssTitle);
+            ArgumentNullException.ThrowIfNull(rssDescription);
+            ArgumentNullException.ThrowIfNull(rssUri);
+            ArgumentNullException.ThrowIfNull(rssFilename);
+            ArgumentNullException.ThrowIfNull(blogPostDirectory);
+            ArgumentNullException.ThrowIfNull(llmChoice);
+            ArgumentNullException.ThrowIfNull(redditToBlueskyFilename);
+            ArgumentNullException.ThrowIfNull(postContentDirectory);
+            ArgumentNullException.ThrowIfNull(redirectDirectory);
+
+            if (!Directory.Exists(blogPostDirectory))
+            {
+                throw new DirectoryNotFoundException($"Blog post directory not found: {blogPostDirectory}");
+            }
+
+            if (!Directory.Exists(postContentDirectory))
+            {
+                throw new DirectoryNotFoundException($"Post content directory not found: {postContentDirectory}");
+            }
+
+            if (!Directory.Exists(redirectDirectory))
+            {
+                throw new DirectoryNotFoundException($"Redirect directory not found: {redirectDirectory}");
+            }
+
+            if (!File.Exists(redditToBlueskyFilename))
+            {
+                throw new FileNotFoundException($"Reddit to Bluesky prompt file not found", redditToBlueskyFilename);
+            }
+
             // Get upvoted and saved posts from Reddit using RedditHelper class in this project
             var redditPosts = await RedditHelper.GetMyImportantRedditPosts(appId, redirectUri, appSecret, username, password, downloadImages);
 
@@ -45,7 +80,7 @@ namespace PostToPoint.Windows
             redditPosts = redditPosts.OrderBy(x => x.Created).ToList();
 
             // We will ground our request with context from the mission, the blog posts and the Reddit posts
-            List<LlmUserAgentMessagePair> previousMessages = new List<LlmUserAgentMessagePair>();
+            var previousMessages = new List<LlmUserAgentMessagePair>();
 
             // Start the Conversation with the LLM by specifying our mission
             AppendMissionMessages(previousMessages);
@@ -64,7 +99,7 @@ namespace PostToPoint.Windows
             {
                 Debug.WriteLine("Reddit post index: " + ++redditPostIndex + " of " + redditPosts.Count);
 
-                if(SqliteHelper.DoesPostExistInBluesky(redditPost))
+                if (SqliteHelper.DoesPostExistInBluesky(redditPost))
                 {
                     Debug.WriteLine("Already posted about this Reddit post, skipping");
                     continue;
@@ -75,7 +110,7 @@ namespace PostToPoint.Windows
 
                 // We will prompt the LLM to convert the reddit posts to Blue Sky posts
                 var retry = 10;
-                string description = null;
+                string? description = null;
                 while (retry-- > 0 && description == null)
                 {
                     try
@@ -85,18 +120,14 @@ namespace PostToPoint.Windows
                     catch (Exception e)
                     {
                         Debug.WriteLine("Error calling Anthropic: " + e.Message);
-
-                        // Just for this once ;)
                         await Task.Delay(30000);
                     }
                 }
 
-                if(retry <= 0)
+                if (description == null)
                 {
-                    throw new Exception("Failed to get a response from LLM");
+                    throw new InvalidOperationException("Failed to get a response from LLM after 10 retries");
                 }
-
-                //var description = "This is a test description";
 
                 description = CleanupText(description);
 
@@ -134,15 +165,8 @@ namespace PostToPoint.Windows
                     YtdlpHelper.DownloadVideo(redditPost.GetUri(), videoFilename);
 
                     // Trim to max 59 secondes
-                    string shortVideoFilename = Path.Combine(Path.GetDirectoryName(videoFilename), Path.GetFileNameWithoutExtension(videoFilename) + "-59s" + Path.GetExtension(videoFilename));
+                    string shortVideoFilename = Path.Combine(Path.GetDirectoryName(videoFilename) ?? postContentDirectory, Path.GetFileNameWithoutExtension(videoFilename) + "-59s" + Path.GetExtension(videoFilename));
                     FfmpegHelper.ShortenVideo(videoFilename, shortVideoFilename);
-
-                    // Upload to OneDrive and get a sharable file link for direct download
-                    // TODO Replace with the correct CommandLine Args --> UI --> Function Call
-                    //OneDriveUploader uploader = new OneDriveUploader(App.Options.OneDriveApplicationClientId,
-                    //    App.Options.OneDriveDriveId,
-                    //    App.Options.OneDriveFolderId);
-                    //var (shareLink, fileId) = await uploader.UploadLargeFileAndGetShareLink(shortVideoFilename);
 
                     var shareLink = GoogleDriveUploader.UploadAndShareFile(shortVideoFilename,
                         "1VIuGmlZ_yd_e0FofoBLvuyf_vtT6PBdl",
@@ -179,13 +203,7 @@ namespace PostToPoint.Windows
                 }
             }
 
-
-
-
-
-
             // Create a new SyndicationFeed
-            // TODO change the id URI to something from the configs
             var feed = new SyndicationFeed(rssTitle, rssDescription, new Uri(rssUri), "https://www.patb.ca/rss/bluesky-auto-post.rss", DateTimeOffset.Now, rssItems);
             XNamespace atom = "http://www.w3.org/2005/Atom";
             feed.ElementExtensions.Add(
@@ -201,11 +219,16 @@ namespace PostToPoint.Windows
                 var formatter = new Rss20FeedFormatter(feed, true);
                 formatter.WriteTo(writer);
             }
-
         }
 
         private static string ShortenUri(string uri, string redirectDirectory, string title, string subheadline, string teaser)
         {
+            ArgumentNullException.ThrowIfNull(uri);
+            ArgumentNullException.ThrowIfNull(redirectDirectory);
+            ArgumentNullException.ThrowIfNull(title);
+            ArgumentNullException.ThrowIfNull(subheadline);
+            ArgumentNullException.ThrowIfNull(teaser);
+
             var uriHash = CalculateUriHash(uri);
 
             var directory = Path.Combine(redirectDirectory, uriHash);
@@ -217,43 +240,33 @@ namespace PostToPoint.Windows
             var shortUri = $"https://patb.ca/r/{slug}";
 
             var templateFilename = Path.Combine(redirectDirectory, "_template.md");
-
-            // The template file should match this format
-            // ---
-            // layout: redirect
-            // title               : "{title}"
-            // subheadline: "{subheadline}"
-            // teaser: "{teaser}"
-            // lang: fr
-            // header:
-            //     image_fullwidth: "header_projets.webp"
-            // permalink: "/r/{slug}"
-            // ref                 : "/r/{slug}"
-            // sitemap: false
-            // redirect_to: {redirect}
-            // ---
+            if (!File.Exists(templateFilename))
+            {
+                throw new FileNotFoundException("Template file not found", templateFilename);
+            }
 
             var template = File.ReadAllText(templateFilename);
             template = template.Replace("{title}", CleanForMarkdownMeta(title));
             template = template.Replace("{subheadline}", CleanForMarkdownMeta(subheadline));
             template = template.Replace("{teaser}", CleanForMarkdownMeta(teaser));
-
-            //TODO: don't know why, but sometime the permalink from reddit gets in the slug in the final .md file.
-            // a fix is written in FIX_SLUG_FROM_PERMALINK
             template = template.Replace("{slug}", $"{slug}");
             template = template.Replace("{redirect}", uri);
 
-            var filename = Path.Combine(directory, $"{DateTime.Now.ToString("yyyy-MM-dd")}-{uriFilenameInUri}.md");
+            var filename = Path.Combine(directory, $"{DateTime.Now:yyyy-MM-dd}-{uriFilenameInUri}.md");
             File.WriteAllText(filename, template);
 
             return shortUri;
         }
 
-        public static string CleanForMarkdownMeta(string unsafeString)
+        public static string CleanForMarkdownMeta(string? unsafeString)
         {
-            string unsafeChars = "\"\'\r\n<>";
+            if (string.IsNullOrEmpty(unsafeString))
+            {
+                return string.Empty;
+            }
 
-            string safeString = unsafeString;
+            string unsafeChars = "\"\'\r\n<>";
+            var safeString = unsafeString;
             foreach (char c in unsafeChars)
             {
                 safeString = safeString.Replace(c, ' ');
@@ -264,6 +277,8 @@ namespace PostToPoint.Windows
 
         private static string CalculateUriHash(string uri)
         {
+            ArgumentNullException.ThrowIfNull(uri);
+
             using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(uri);
@@ -299,9 +314,11 @@ namespace PostToPoint.Windows
             return result.ToString();
         }
 
-
         private static void AppendRedditPostMessages(List<LlmUserAgentMessagePair> previousMessages, RedditPostData redditPost)
         {
+            ArgumentNullException.ThrowIfNull(previousMessages);
+            ArgumentNullException.ThrowIfNull(redditPost);
+
             previousMessages.Add(new LlmUserAgentMessagePair()
             {
                 UserMessage = $"""
@@ -316,6 +333,8 @@ namespace PostToPoint.Windows
 
         private static void AppendMissionMessages(List<LlmUserAgentMessagePair> previousMessages)
         {
+            ArgumentNullException.ThrowIfNull(previousMessages);
+
             previousMessages.Add(new LlmUserAgentMessagePair()
             {
                 UserMessage = """
@@ -330,13 +349,23 @@ namespace PostToPoint.Windows
 
         private static void AppendBlogContextMessages(List<LlmUserAgentMessagePair> previousMessages, string blogPostDirectory)
         {
-            StringBuilder sbBlogs = new StringBuilder();
-            foreach (var blogPost in System.IO.Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x).Take(1))
+            ArgumentNullException.ThrowIfNull(previousMessages);
+            ArgumentNullException.ThrowIfNull(blogPostDirectory);
+
+            if (!Directory.Exists(blogPostDirectory))
+            {
+                throw new DirectoryNotFoundException($"Blog post directory not found: {blogPostDirectory}");
+            }
+
+            var blogPosts = Directory.GetFiles(blogPostDirectory, "*.md").OrderBy(x => x).Take(1);
+
+            var sbBlogs = new StringBuilder();
+            foreach (var blogPost in blogPosts)
             {
                 sbBlogs.AppendLine("---------------------------------------------------------------");
                 sbBlogs.AppendLine("Blog post " + blogPost);
                 sbBlogs.AppendLine("---------------------------------------------------------------");
-                sbBlogs.AppendLine(System.IO.File.ReadAllText(blogPost));
+                sbBlogs.AppendLine(File.ReadAllText(blogPost));
                 sbBlogs.AppendLine("---------------------------------------------------------------");
                 sbBlogs.AppendLine("End of blog post" + blogPost);
                 sbBlogs.AppendLine("---------------------------------------------------------------");
@@ -349,37 +378,41 @@ namespace PostToPoint.Windows
                 Here are the reference blog posts that you should use to create the Bluesky post.
                 Understand the point of view, the style, and the angle of the blog posts.
                 ---------------------------------------------------------------
-                {sbBlogs.ToString()}
+                {sbBlogs}
                 ---------------------------------------------------------------
                 """,
-                AgentMessage = "Excellent, I understant your style, your point of view and how you thrive to walk the middle ground while beeing engaging and to bring within everyone’s reach.  I also understand that my answer for the post will only contain the post, nothing more."
+                AgentMessage = "Excellent, I understant your style, your point of view and how you thrive to walk the middle ground while beeing engaging and to bring within everyone's reach.  I also understand that my answer for the post will only contain the post, nothing more."
             });
         }
 
         private static string GetMimeType(string itemUri)
         {
+            ArgumentNullException.ThrowIfNull(itemUri);
+
             var provider = new FileExtensionContentTypeProvider();
+            if (provider.TryGetContentType(itemUri, out string? contentType))
+            {
+                return contentType;
+            }
 
-            string contentType;
-            provider.TryGetContentType(itemUri, out contentType);
-
-            return contentType ?? "application/octet-stream";
+            return "application/octet-stream";
         }
 
         private static async Task<long> GetLength(string uri)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                // Download image data
-                byte[] imageData = await client.GetByteArrayAsync(uri);
+            ArgumentNullException.ThrowIfNull(uri);
 
-                return imageData.Length;
-            }
+            using var client = new HttpClient();
+            var imageData = await client.GetByteArrayAsync(uri);
+            return imageData.Length;
         }
 
-        public static string CleanupText(string text)
+        public static string CleanupText(string? text)
         {
-            if (string.IsNullOrEmpty(text)) return text;
+            if (string.IsNullOrEmpty(text))
+            {
+                return string.Empty;
+            }
 
             // Remove spaces before punctuation
             text = Regex.Replace(text, @"\s+([,.!?:;])", "$1");

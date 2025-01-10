@@ -9,17 +9,29 @@ namespace PostToPoint.Windows
 {
     public class SqliteHelper
     {
-        private static readonly string DatabaseFilename = App.Options.SqlLiteDatabaseFilename;
-        private static readonly string ConnectionString = ConnectionString = new SqliteConnectionStringBuilder
+        private static readonly string DatabaseFilename = App.Options.SqlLiteDatabaseFilename ?? throw new InvalidOperationException("Database filename not configured");
+        private static readonly string ConnectionString = new SqliteConnectionStringBuilder
         {
             DataSource = DatabaseFilename
         }.ToString();
 
         static SqliteHelper()
         {
+            if (string.IsNullOrWhiteSpace(DatabaseFilename))
+            {
+                throw new InvalidOperationException("Database filename cannot be empty");
+            }
+
             // Ensure the database file is created if it doesn't exist
             if (!System.IO.File.Exists(DatabaseFilename))
             {
+                // Create the directory if it doesn't exist
+                var directory = System.IO.Path.GetDirectoryName(DatabaseFilename);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    System.IO.Directory.CreateDirectory(directory);
+                }
+
                 // Just opening a connection will create the database file if it doesn't exist
                 using var connection = new SqliteConnection(ConnectionString);
 
@@ -31,14 +43,14 @@ namespace PostToPoint.Windows
                     """
                     CREATE TABLE IF NOT EXISTS RedditPostsBluesky (
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Created TEXT,
-                        RedditPostId TEXT,
-                        RedditTitle TEXT,
-                        RedditPermalink TEXT,
-                        BlueskyPost TEXT,
-                        BlueskyShortUri TEXT,
-                        BlueskyImageUri TEXT,
-                        BlueskyVideoUri TEXT
+                        Created TEXT NOT NULL,
+                        RedditPostId TEXT NOT NULL,
+                        RedditTitle TEXT NOT NULL,
+                        RedditPermalink TEXT NOT NULL,
+                        BlueskyPost TEXT NOT NULL,
+                        BlueskyShortUri TEXT NOT NULL,
+                        BlueskyImageUri TEXT NOT NULL,
+                        BlueskyVideoUri TEXT NOT NULL
                     );
                     """;
                 command.ExecuteNonQuery();
@@ -47,6 +59,9 @@ namespace PostToPoint.Windows
 
         public static bool DoesPostExistInBluesky(RedditPostData postData)
         {
+            ArgumentNullException.ThrowIfNull(postData);
+            ArgumentNullException.ThrowIfNull(postData.Post);
+
             using var connection = new SqliteConnection(ConnectionString); 
             connection.Open();
 
@@ -55,16 +70,18 @@ namespace PostToPoint.Windows
             selectCommand.Parameters.AddWithValue("$postId", postData.Post.Id);
 
             using var reader = selectCommand.ExecuteReader();
-            while (reader.Read())
-            {
-                return true;
-            }
-
-            return false;
+            return reader.Read();
         }
 
         public static void AppendRedditPostToBluesky(RedditPostData postData, string post, string shortUri, string imageUri, string videoUri)
         {
+            ArgumentNullException.ThrowIfNull(postData);
+            ArgumentNullException.ThrowIfNull(postData.Post);
+            ArgumentNullException.ThrowIfNull(post);
+            ArgumentNullException.ThrowIfNull(shortUri);
+            ArgumentNullException.ThrowIfNull(imageUri);
+            ArgumentNullException.ThrowIfNull(videoUri);
+
             using var connection = new SqliteConnection(ConnectionString);
             connection.Open();
 

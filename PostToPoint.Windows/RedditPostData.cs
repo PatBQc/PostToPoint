@@ -9,23 +9,29 @@ namespace PostToPoint.Windows
 {
     public class RedditPostData
     {
-        public string Title { get; set; }
-        public string Url { get; set; }
+        public required string Title { get; set; }
+        public required string Url { get; set; }
         public string? SelfText { get; set; }
         public string? SelfTextHTML { get; set; }
-        public string Subreddit { get; set; }
+        public required string Subreddit { get; set; }
         public DateTime Created { get; set; }
         public string? ScreenshotPath { get; set; }
 
-        public Post Post { get; set; }
+        public required Post Post { get; set; }
 
         public string GetMetadata()
         {
+            ArgumentNullException.ThrowIfNull(Title);
+            ArgumentNullException.ThrowIfNull(Subreddit);
+            ArgumentNullException.ThrowIfNull(Url);
+
             return $"Title: {Title}\nSubreddit: {Subreddit}\nDate: {Created}\nURL: {Url}";
         }
 
         public string GetCompleteContent()
         {
+            ArgumentNullException.ThrowIfNull(Post);
+
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(GetMetadata());
 
@@ -41,6 +47,9 @@ namespace PostToPoint.Windows
 
         public string GetUri()
         {
+            ArgumentNullException.ThrowIfNull(Post);
+            ArgumentNullException.ThrowIfNull(Url);
+
             if (Uri.IsWellFormedUriString(Url, UriKind.Absolute))
             {
                 return Url;
@@ -51,6 +60,8 @@ namespace PostToPoint.Windows
 
         public static string GetFormattedComments(Post post, int maxDepth = -1, int maxComments = -1)
         {
+            ArgumentNullException.ThrowIfNull(post);
+
             var sb = new StringBuilder();
             foreach (var comment in post.Comments.GetComments())
             {
@@ -70,17 +81,25 @@ namespace PostToPoint.Windows
 
                 string urlClean = Url.ToLower().Trim();
 
-                return urlClean.EndsWith(".png")  || urlClean.EndsWith(".jpg") || urlClean.EndsWith(".jpeg") || urlClean.EndsWith(".gif") || urlClean.EndsWith(".webp");
+                return urlClean.EndsWith(".png") || urlClean.EndsWith(".jpg") || urlClean.EndsWith(".jpeg") || urlClean.EndsWith(".gif") || urlClean.EndsWith(".webp");
             }
         }
 
         public string MarkdownImageLink
         {
-            get { return "![Image de " + Title + "](" + Url + ")"; }
+            get 
+            {
+                ArgumentNullException.ThrowIfNull(Title);
+                ArgumentNullException.ThrowIfNull(Url);
+                return "![Image de " + Title + "](" + Url + ")"; 
+            }
         }
 
         private static void AppendComment(StringBuilder sb, Comment comment, int depth, int maxDepth, int commentCount, int maxComments)
         {
+            ArgumentNullException.ThrowIfNull(sb);
+            ArgumentNullException.ThrowIfNull(comment);
+
             if (maxDepth != -1 && depth > maxDepth) return;
             if (maxComments != -1 && commentCount > maxComments) return;
 
@@ -99,7 +118,5 @@ namespace PostToPoint.Windows
                 }
             }
         }
-
-
     }
 }

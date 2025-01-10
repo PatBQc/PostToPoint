@@ -5,13 +5,26 @@ using Google.Apis.Upload;
 using System.IO;
 using System.Security;
 
-
 namespace PostToPoint.Windows
 {
     internal class GoogleDriveUploader
     {
         public static string UploadAndShareFile(string filename, string folderId, string credentialFilename)
         {
+            ArgumentNullException.ThrowIfNull(filename);
+            ArgumentNullException.ThrowIfNull(folderId);
+            ArgumentNullException.ThrowIfNull(credentialFilename);
+
+            if (!File.Exists(filename))
+            {
+                throw new FileNotFoundException("Input file not found", filename);
+            }
+
+            if (!File.Exists(credentialFilename))
+            {
+                throw new FileNotFoundException("Credential file not found", credentialFilename);
+            }
+
             // Load service account credentials
             var credential = GoogleCredential.FromFile(credentialFilename)
                 .CreateScoped(DriveService.ScopeConstants.Drive);
@@ -26,8 +39,8 @@ namespace PostToPoint.Windows
             // File metadata
             var fileMetadata = new Google.Apis.Drive.v3.Data.File()
             {
-                Name = System.IO.Path.GetFileName(filename),
-                Parents = new List<string> { folderId } // The ID of the shared folder
+                Name = Path.GetFileName(filename),
+                Parents = new List<string> { folderId }
             };
 
             // File upload
@@ -39,41 +52,42 @@ namespace PostToPoint.Windows
 
                 if (result.Status == UploadStatus.Failed)
                 {
-                    Console.WriteLine($"Error uploading file: {result.Exception.Message}");
-                    throw new Exception("Google Drive file upload failed, message: " + result.Exception.Message);
+                    var errorMessage = result.Exception?.Message ?? "Unknown error";
+                    Console.WriteLine($"Error uploading file: {errorMessage}");
+                    throw new Exception($"Google Drive file upload failed: {errorMessage}");
                 }
-                else
+
+                var fileId = request.ResponseBody?.Id;
+                if (string.IsNullOrEmpty(fileId))
                 {
-                    string fileId = request.ResponseBody?.Id;
-                    Console.WriteLine($"File ID: {fileId}");
+                    throw new InvalidOperationException("File upload succeeded but no file ID was returned");
+                }
 
-                    // Set file permissions to make it publicly accessible
-                    var permission = new Google.Apis.Drive.v3.Data.Permission
-                    {
-                        Type = "anyone",
-                        Role = "reader"
-                    };
+                Console.WriteLine($"File ID: {fileId}");
 
-                    try
-                    {
-                        service.Permissions.Create(permission, fileId).Execute();
-                        Console.WriteLine("File shared publicly successfully");
+                // Set file permissions to make it publicly accessible
+                var permission = new Google.Apis.Drive.v3.Data.Permission
+                {
+                    Type = "anyone",
+                    Role = "reader"
+                };
 
-                        string directDownloadLink = $"https://drive.google.com/uc?export=download&id={fileId}";
+                try
+                {
+                    service.Permissions.Create(permission, fileId).Execute();
+                    Console.WriteLine("File shared publicly successfully");
 
-                        Console.WriteLine($"Direct Download Link: {directDownloadLink}");
-                        return directDownloadLink;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error setting permissions: {ex.Message}");
-                        throw new SecurityException("Error setting permissions", ex);
-                    }
+                    string directDownloadLink = $"https://drive.google.com/uc?export=download&id={fileId}";
+
+                    Console.WriteLine($"Direct Download Link: {directDownloadLink}");
+                    return directDownloadLink;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error setting permissions: {ex.Message}");
+                    throw new SecurityException($"Error setting permissions for file {fileId}", ex);
                 }
             }
-
-            throw new InvalidOperationException("Google Drive file upload failed");
         }
-
     }
 }

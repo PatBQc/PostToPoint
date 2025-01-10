@@ -12,7 +12,25 @@ namespace PostToPoint.Windows
     {
         public static void ShortenVideo(string longVideoFilename, string shortVideoFilename)
         {
-            // Find ffmpeg executable path.  If it's in current directory: take it.  Otherwise, search in PATH
+            ArgumentNullException.ThrowIfNull(longVideoFilename);
+            ArgumentNullException.ThrowIfNull(shortVideoFilename);
+
+            if (string.IsNullOrWhiteSpace(longVideoFilename))
+            {
+                throw new ArgumentException("Input video filename cannot be empty", nameof(longVideoFilename));
+            }
+
+            if (string.IsNullOrWhiteSpace(shortVideoFilename))
+            {
+                throw new ArgumentException("Output video filename cannot be empty", nameof(shortVideoFilename));
+            }
+
+            if (!File.Exists(longVideoFilename))
+            {
+                throw new FileNotFoundException("Input video file not found", longVideoFilename);
+            }
+
+            // Find ffmpeg executable path. If it's in current directory: take it. Otherwise, search in PATH
             var ffmpegPath = FindFfmpegPath();
 
             // Execute ffmpeg command to split the audio from the video
@@ -38,6 +56,11 @@ namespace PostToPoint.Windows
                 process.BeginErrorReadLine();
 
                 process.WaitForExit();
+
+                if (process.ExitCode != 0)
+                {
+                    throw new ApplicationException($"FFmpeg process exited with code {process.ExitCode}");
+                }
             }
             else
             {
@@ -47,22 +70,23 @@ namespace PostToPoint.Windows
 
         private static string FindFfmpegPath()
         {
-            string ffmpegPath = "";
-
-            if (string.IsNullOrEmpty(ffmpegPath))
+            // First try current directory
+            var currentDirPath = Path.Combine(Directory.GetCurrentDirectory(), "ffmpeg.exe");
+            if (File.Exists(currentDirPath))
             {
-                ffmpegPath = Path.Combine(Directory.GetCurrentDirectory(), "ffmpeg.exe");
+                return currentDirPath;
             }
 
-            if (!File.Exists(ffmpegPath))
+            // Then try PATH
+            var environmentPath = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(environmentPath))
             {
-                var enviromentPath = System.Environment.GetEnvironmentVariable("PATH");
-
-                var paths = enviromentPath.Split(';');
-                ffmpegPath = paths.Select(x => Path.Combine(x, "ffmpeg.exe"))
-                                   .Where(x => File.Exists(x))
-                                   .FirstOrDefault();
+                throw new InvalidOperationException("PATH environment variable is not set");
             }
+
+            var paths = environmentPath.Split(';');
+            var ffmpegPath = paths.Select(x => Path.Combine(x, "ffmpeg.exe"))
+                               .FirstOrDefault(File.Exists);
 
             if (string.IsNullOrEmpty(ffmpegPath))
             {
