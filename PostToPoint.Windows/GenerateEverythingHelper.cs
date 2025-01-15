@@ -18,9 +18,15 @@ namespace PostToPoint.Windows
         private static bool _isTestMode = true;
 
         private const string RedditToBlogPostPrompt = """
-                Create my blog post content with 4 sections, written in markdown format.  You can use markdown to format the text.
-                
-                The sections are: "Récapitulatif factuel", "Point de vue neutre", "Point de vue optimiste", "Point de vue pessimiste".
+                Create my blog post content with 5 sections, written in markdown format.  
+                You can use markdown to format the text. 
+                I only want the content of the blog post, not the frontmatter headers of the blog post.
+                Use my blog post sample to figure out my voice and style.
+                Compose a detailed and engaging blog post in markdown format, tailored for a Quebec audience. 
+                Use markdown to adequately structure the text, ensuring clarity and accessibility for both technical and non-technical readers. 
+                Ensure the narrative voice reflects that of a reviewer analyzing articles rather than the original author.
+                                
+                The sections are: "Récapitulatif factuel", "Point de vue neutre", "Exemple", "Point de vue optimiste", "Point de vue pessimiste".
 
                 Each section should be written in a way that is engaging and brings the subject within everyone's reach.
 
@@ -31,6 +37,9 @@ namespace PostToPoint.Windows
                 The Neutral View "Point de vue neutre" should be a neutral interpretation of the post, like the zen middle view without the spiritism.  
                 It should represent what is probable, not necessarily what is possible.  
                 This should be the more engaging and thought provoking section of them all.
+
+                The section "Exemple" crafts an engaging and humorous narrative or analogy to simplify complex ideas. 
+                Use this section to make the topic relatable and entertaining, leveraging humor to enhance understanding.
 
                 The Optimistic "Point de vue optimiste" View should be a optimistic view of the post, more like what we might ear in the tech bro Silicon Valley community. 
                 It's the more positive and enthusiastic section of them all, betting on what's possible even if a little improbable.
@@ -175,7 +184,13 @@ namespace PostToPoint.Windows
 
                 previousMessages.RemoveAt(previousMessages.Count - 1);
 
-                string shortUri = ShortenUri(redditPost.GetUri(), redirectDirectory, redditPost.Title, answerBluesky, redditPost.Title + " " + answerBluesky + " " + redditPost.GetUri());
+                string shortUri = CreateBlogPostAndGetRedirectUri(
+                    redditPost.GetUri(), 
+                    redirectDirectory, 
+                    redditPost.Title, 
+                    answerBluesky, 
+                    redditPost.Title + " " + answerBluesky + " " + redditPost.GetUri(),
+                    answerBlogPost);
 
                 var uriLength = shortUri.Length + 1;
 
@@ -241,24 +256,6 @@ namespace PostToPoint.Windows
                 {
                     Console.WriteLine("Failed to send to webhook");
                 }
-            }
-
-            // Get all the published content files
-            var contentFiles = Directory.GetFiles(redirectDirectory, "*.md", SearchOption.AllDirectories);
-
-            // Remove the _template.md file or any other file that starts with _ considered as template or system file
-            contentFiles = contentFiles.Where(x => 
-            {
-                var fileName = Path.GetFileName(x);
-                return fileName != null && !fileName.StartsWith("_");
-            }).ToArray();
-
-            var redditPostsDic = redditPosts.ToDictionary(x => GenerateBlueSkyRssFeedHelper.CleanForMarkdownMeta(x.Title));
-
-            int current = 0;
-            foreach (var file in contentFiles)
-            {
-                Debug.WriteLine($"Processing {file} {++current}/{contentFiles.Length}");
             }
         }
 
@@ -398,7 +395,7 @@ namespace PostToPoint.Windows
             return text.Trim();
         }
 
-        private static string ShortenUri(string uri, string redirectDirectory, string title, string subheadline, string teaser)
+        private static string CreateBlogPostAndGetRedirectUri(string uri, string redirectDirectory, string title, string subheadline, string teaser, string content)
         {
             ArgumentNullException.ThrowIfNull(uri);
             ArgumentNullException.ThrowIfNull(redirectDirectory);
@@ -428,6 +425,7 @@ namespace PostToPoint.Windows
             template = template.Replace("{teaser}", CleanForMarkdownMeta(teaser));
             template = template.Replace("{slug}", $"{slug}");
             template = template.Replace("{redirect}", uri);
+            template += Environment.NewLine + content;
 
             var filename = Path.Combine(directory, $"{DateTime.Now:yyyy-MM-dd}-{uriFilenameInUri}.md");
             File.WriteAllText(filename, template);
