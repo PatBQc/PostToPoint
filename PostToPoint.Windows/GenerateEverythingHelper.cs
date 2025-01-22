@@ -64,11 +64,9 @@ namespace PostToPoint.Windows
 
                 3. Create an engaging c post in French based on your summary. The post should be attention-grabbing and informative while maintaining the essence of the original content.
 
-                4. Include 3 to 5 relevant hashtags in French at the end of your post. These hashtags should be related to the main topics or themes of the content.
+                4. Ensure that your entire Twitter post, is less than 250 characters in total.
 
-                5. Ensure that your entire Twitter post, including the hashtags, is less than 250 characters in total.
-
-                6. IMPORTANT: Write your Twitter post without any additional comments or explanations. The output should contain only the content of the Twitter post itself.
+                5. IMPORTANT: Write your Twitter post without any additional comments or explanations. The output should contain only the content of the Twitter post itself.
 
                 IMPORTANT: Provide your Twitter post as the final output, adhering to all the guidelines mentioned above. 
                 IMPORTANT: ANSWER WITH ONLY THE CONTENT OF THE TWITTER POST.  NOTHING ELSE, NOTHING MORE.  NO ADDITIONNAL COMMENTS.  NOTHING MORE THEN THE POST CONTENT.
@@ -176,6 +174,8 @@ namespace PostToPoint.Windows
                 string answerTwitter = await QueryLlm(llmChoice, previousMessages, RedditToTwitterPrompt);
                 previousMessages.Add(new LlmUserAgentMessagePair() { AgentMessage = RedditToTwitterPrompt, UserMessage = answerTwitter });
 
+                answerTwitter = MicroblogingCleanupText(answerTwitter);
+
                 // Now Bluesky
                 string answerBluesky = await QueryLlm(llmChoice, previousMessages, redditToBlueskyPrompt);
                 previousMessages.Add(new LlmUserAgentMessagePair() { AgentMessage = redditToBlueskyPrompt, UserMessage = answerBluesky });
@@ -193,6 +193,11 @@ namespace PostToPoint.Windows
                     answerBlogPost);
 
                 var uriLength = shortUri.Length + 1;
+
+                if (answerTwitter.Length > 270 - uriLength - 1)
+                {
+                    answerTwitter = answerTwitter.Substring(0, 270 - uriLength - 1);
+                }
 
                 if (answerBluesky.Length > 300 - uriLength - 1)
                 {
@@ -241,6 +246,7 @@ namespace PostToPoint.Windows
                 using var webhook = new ZapierWebhook(webhookUrl);
                 bool success = await webhook.SendToWebhook(
                             answerBluesky,
+                            answerTwitter,
                             shortUri,
                             imageUri,
                             videoUri

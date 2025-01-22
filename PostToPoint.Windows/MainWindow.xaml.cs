@@ -346,56 +346,6 @@ namespace PostToPoint.Windows
             return null;
         }
 
-        private async void BtnGenerateBlueskyRss_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                IsProcessing = true;
-
-                if (!ValidateRequiredSettings())
-                {
-                    return;
-                }
-
-                // Perform the RSS feed generation
-                await Task.Run(async () =>
-                {
-                    await GenerateBlueSkyRssFeedHelper.GenerateBlueSkyRssFeed(
-                        RedditAppId!,
-                        RedditRedirectUri!,
-                        RedditAppSecret!,
-                        RedditUsername!,
-                        GetRedditPassword()!,
-                        false,
-                        "Bluesky Auto Post",
-                        "RSS feed generated for Bluesky Auto Post from Reddit Upvotes and Saved posts",
-                        "https://www.patb.ca/rss/bluesky-auto-post.rss",
-                        System.IO.Path.Combine(RssDirectory!, "bluesky-auto-post.xml"),
-                        BlogPostDirectory!,
-                        App.Options.LlmChoice,
-                        RedditToBlueskyPath!,
-                        PostContentDirectory!,
-                        RedirectDirectory!
-                        );
-                });
-
-                MessageBox.Show("Bluesky RSS feed has been generated successfully!",
-                              "Success",
-                              MessageBoxButton.OK,
-                              MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occurred while generating the RSS feed:\n\n{ex.Message}{Environment.NewLine}{Environment.NewLine}{ex}",
-                              "Error",
-                              MessageBoxButton.OK,
-                              MessageBoxImage.Error);
-            }
-            finally
-            {
-                IsProcessing = false;
-            }
-        }
 
         private async void BtnGenerateContentRssPage_Click(object sender, RoutedEventArgs e)
         {

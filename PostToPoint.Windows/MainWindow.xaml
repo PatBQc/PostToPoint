@@ -261,41 +261,6 @@
                 <GroupBox Header="Actions" Margin="10">
                     <StackPanel Margin="10">
                         <StackPanel Orientation="Horizontal">
-                            <Button Name="BtnGenerateBlueskyRss" 
-                                Content="Generate Bluesky RSS Feed from Reddit" 
-                                Padding="10,5"
-                                Margin="5,0"
-                                Height="30"
-                                HorizontalAlignment="Left"
-                                Click="BtnGenerateBlueskyRss_Click">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsProcessing}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-
-                            <Button Name="BtnGenerateContentRssPage" 
-                                Content="Generate Content for RSS Feed from Disk Redirects" 
-                                Padding="10,5"
-                                Margin="5,0"
-                                Height="30"
-                                HorizontalAlignment="Left"
-                                Click="BtnGenerateContentRssPage_Click">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsProcessing}" Value="True">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
 
                             <Button Name="BtnGenerateEverything" 
                                 Content="Generate Everything, EVERYTHING !" 

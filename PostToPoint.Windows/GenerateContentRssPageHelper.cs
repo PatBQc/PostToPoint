@@ -64,7 +64,7 @@ namespace PostToPoint.Windows
 
             var redditPosts = await RedditHelper.GetMyImportantRedditPosts(appId, redirectUri, appSecret, username, password, downloadImages, "year", "new", 120);
 
-            var redditPostsDic = redditPosts.ToDictionary(x => GenerateBlueSkyRssFeedHelper.CleanForMarkdownMeta(x.Title));
+            var redditPostsDic = redditPosts.ToDictionary(x => CleanForMarkdownMeta(x.Title));
 
             int current = 0;
             foreach (var file in contentFiles)
@@ -185,6 +185,23 @@ namespace PostToPoint.Windows
                 """;
 
             md.SaveToFile(file);
+        }
+
+        public static string CleanForMarkdownMeta(string? unsafeString)
+        {
+            if (string.IsNullOrEmpty(unsafeString))
+            {
+                return string.Empty;
+            }
+
+            string unsafeChars = "\"\'\r\n<>";
+            var safeString = unsafeString;
+            foreach (char c in unsafeChars)
+            {
+                safeString = safeString.Replace(c, ' ');
+            }
+
+            return safeString;
         }
 
         private static void AppendMissionMessages(List<LlmUserAgentMessagePair> previousMessages)

@@ -8,11 +8,9 @@ You will be transforming a Reddit post into a concise and engaging Bluesky post 
 
 3. Create an engaging Bluesky post in French based on your summary. The post should be attention-grabbing and informative while maintaining the essence of the original content.
 
-4. Include 3 to 5 relevant hashtags in French at the end of your post. These hashtags should be related to the main topics or themes of the content.
+4. Ensure that your entire Bluesky post, is less than 270 characters in total.
 
-5. Ensure that your entire Bluesky post, including the hashtags, is less than 250 characters in total.
-
-6. IMPORTANT: Write your Bluesky post without any additional comments or explanations. The output should contain only the content of the Bluesky post itself.
+5. IMPORTANT: Write your Bluesky post without any additional comments or explanations. The output should contain only the content of the Bluesky post itself.
 
 IMPORTANT: Provide your Bluesky post as the final output, adhering to all the guidelines mentioned above. 
 IMPORTANT: ANSWER WITH ONLY THE CONTENT OF THE BLUESKY POST.  NOTHING ELSE, NOTHING MORE.  NO ADDITIONNAL COMMENTS.  NOTHING MORE THEN THE POST CONTENT.

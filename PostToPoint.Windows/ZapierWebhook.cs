@@ -11,7 +11,8 @@ namespace PostToPoint.Windows
 
     public class WebhookData
     {
-        public string Description { get; set; } = string.Empty;
+        public string PostBluesky { get; set; } = string.Empty;
+        public string PostTwitter { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
         public string ImageLink { get; set; } = string.Empty;
         public string VideoLink { get; set; } = string.Empty;
@@ -30,7 +31,7 @@ namespace PostToPoint.Windows
             this.client = new HttpClient();
         }
 
-        public async Task<bool> SendToWebhook(string description, string link, string imageLink, string videoLink)
+        public async Task<bool> SendToWebhook(string postBluesky, string postTwitter, string link, string imageLink, string videoLink)
         {
             if (disposed)
             {
@@ -41,7 +42,8 @@ namespace PostToPoint.Windows
             {
                 var webhookData = new WebhookData
                 {
-                    Description = description ?? string.Empty,
+                    PostBluesky = postBluesky ?? string.Empty,
+                    PostTwitter = postTwitter ?? string.Empty,
                     Link = link ?? string.Empty,
                     ImageLink = imageLink ?? string.Empty,
                     VideoLink = videoLink ?? string.Empty
