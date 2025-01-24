@@ -252,7 +252,7 @@ namespace PostToPoint.Windows
                             videoUri
                         );
 
-                SqliteHelper.AppendRedditPostToBluesky(redditPost, answerBluesky, shortUri, imageUri, videoUri);
+                SqliteHelper.AppendRedditPostToBluesky(redditPost, answerBluesky, answerTwitter, shortUri, imageUri, videoUri);
 
                 if (success)
                 {

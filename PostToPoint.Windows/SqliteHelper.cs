@@ -73,11 +73,12 @@ namespace PostToPoint.Windows
             return reader.Read();
         }
 
-        public static void AppendRedditPostToBluesky(RedditPostData postData, string post, string shortUri, string imageUri, string videoUri)
+        public static void AppendRedditPostToBluesky(RedditPostData postData, string blueskyPost, string twitterPost, string shortUri, string imageUri, string videoUri)
         {
             ArgumentNullException.ThrowIfNull(postData);
             ArgumentNullException.ThrowIfNull(postData.Post);
-            ArgumentNullException.ThrowIfNull(post);
+            ArgumentNullException.ThrowIfNull(blueskyPost);
+            ArgumentNullException.ThrowIfNull(twitterPost);
             ArgumentNullException.ThrowIfNull(shortUri);
             ArgumentNullException.ThrowIfNull(imageUri);
             ArgumentNullException.ThrowIfNull(videoUri);
@@ -88,17 +89,18 @@ namespace PostToPoint.Windows
             var insertCommand = connection.CreateCommand();
             insertCommand.CommandText =
                 """
-                INSERT INTO RedditPostsBluesky (Created, RedditPostId, RedditTitle, RedditPermalink, BlueskyPost, BlueskyShortUri, BlueskyImageUri, BlueskyVideoUri)
-                VALUES ($created, $postId, $title, $permalink, $post, $shortUri, $imageUri, $videoUri);
+                INSERT INTO RedditPostsBluesky (Created, RedditPostId, RedditTitle, RedditPermalink, BlueskyPost, BlueskyShortUri, BlueskyImageUri, BlueskyVideoUri, TwitterPost)
+                VALUES ($created, $postId, $title, $permalink, $blueskyPost, $shortUri, $imageUri, $videoUri, $twitterPost);
                 """;
             insertCommand.Parameters.AddWithValue("$created", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             insertCommand.Parameters.AddWithValue("$postId", postData.Post.Id);
             insertCommand.Parameters.AddWithValue("$title", postData.Title);
             insertCommand.Parameters.AddWithValue("$permalink", postData.Post.Permalink);
-            insertCommand.Parameters.AddWithValue("$post", post);
+            insertCommand.Parameters.AddWithValue("$blueskyPost", blueskyPost);
             insertCommand.Parameters.AddWithValue("$shortUri", shortUri);
             insertCommand.Parameters.AddWithValue("$imageUri", imageUri);
             insertCommand.Parameters.AddWithValue("$videoUri", videoUri);
+            insertCommand.Parameters.AddWithValue("$twitterPost", twitterPost);
 
             insertCommand.ExecuteNonQuery();
         }
